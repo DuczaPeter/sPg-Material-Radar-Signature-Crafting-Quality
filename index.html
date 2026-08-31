@@ -1,0 +1,1826 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>sPg Material Radar Signature & Crafting Quality</title>
+<style>
+:root{
+  --bg:#090d12; --panel:#0d131b; --panel2:#101923; --line:#243142; --line2:#1b2634;
+  --text:#d7e2ee; --muted:#8794a5;
+  --legendary:#ffad19; --epic:#c75cff; --rare:#2b9cff; --uncommon:#2bd1b1; --common:#8c9aaa;
+  --roc:#66dfa9; --fps:#71badc; --salvage:#c8a969; --unknown:#7d8794;
+  --accent:#00d9ff;
+  --label-col:clamp(108px,12vw,210px);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;overflow-x:hidden}
+body{
+  margin:0;background:var(--bg);color:var(--text);overflow-x:hidden;
+  font-family:Roboto,Arial,Helvetica,sans-serif;
+}
+.app{width:100%;max-width:none;margin:0 auto;padding:clamp(6px,1vw,14px)}
+.topbar{
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+  justify-content:flex-start;
+  padding:12px 14px;margin-bottom:12px;border:1px solid #1b2b3d;
+  background:linear-gradient(180deg,#101721,#0a1017);border-radius:12px;
+}
+.topbar h1{font:700 clamp(16px,1.15vw,24px)/1.2 Orbitron,Roboto,Arial,sans-serif;margin:0 auto 0 0;color:#eef7ff}
+button,select{
+  min-height:36px;border-radius:8px;border:1px solid #29445b;background:#0b131c;color:#dbe8f3;
+  padding:0 10px;font-weight:700;font-size:clamp(12px,.78vw,16px)
+}
+button{cursor:pointer}
+button.active{border-color:#d49a1e;color:#ffd26a;background:#1f190c}
+.chart-shell{
+  width:100%;
+  border:1px solid #1e2a39;background:#080c11;border-radius:12px;
+  overflow:hidden;
+}
+.chart-head{
+  display:grid;grid-template-columns:var(--label-col) minmax(0,1fr);
+  width:100%;
+  border-bottom:1px solid #1b2634;background:#0c1118;
+}
+.chart-head .left{padding:10px 12px;color:#7f8c9c;font-size:11px;font-weight:800;text-transform:uppercase}
+.scale{
+  position:relative;height:34px;
+}
+.tick{
+  position:absolute;bottom:0;transform:translateX(-50%);color:#526072;font:700 10px/1 ui-monospace,Consolas,monospace;
+}
+.tick::before{
+  content:"";position:absolute;bottom:14px;left:50%;width:1px;height:13px;background:#2b3949;
+}
+.radar-section{border-top:1px solid #121b25}
+.radar-row{
+  --c:var(--unknown);
+  display:grid;grid-template-columns:var(--label-col) minmax(0,1fr);
+  min-height:clamp(30px,2.15vw,42px);width:100%;
+  position:relative;cursor:pointer;transition:.14s ease;
+}
+.radar-row:hover{background:color-mix(in srgb,var(--c) 5%,transparent)}
+.radar-row.selected{
+  min-height:0;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--c) 12%,transparent),transparent 68%);
+}
+.material-label{
+  display:flex;align-items:center;justify-content:flex-end;
+  min-width:0;padding:3px clamp(7px,1vw,18px) 3px 5px;
+  color:var(--c);
+  font:800 clamp(11px,.92vw,17px)/1.08 ui-monospace,SFMono-Regular,Consolas,monospace;
+  letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.radar-row.selected .material-label{font-size:clamp(12px,.9vw,16px);overflow:hidden;text-overflow:ellipsis}
+.track{
+  position:relative;min-width:0;min-height:clamp(30px,2.15vw,42px);
+  border-left:1px solid #263345;overflow:hidden;
+  isolation:isolate;
+  background-image:linear-gradient(to right,transparent calc(16.666% - 1px),#1c2836 16.666%,transparent calc(16.666% + 1px));
+}
+.track::after{
+  content:"";position:absolute;top:0;bottom:0;left:8%;width:1px;background:#33465a;opacity:.8;pointer-events:none;
+}
+.track::before{
+  content:"";position:absolute;inset:0;
+  background:
+    linear-gradient(to right,transparent 16.666%,#1c2836 16.666%,#1c2836 calc(16.666% + 1px),transparent calc(16.666% + 1px)),
+    linear-gradient(to right,transparent 33.333%,#1c2836 33.333%,#1c2836 calc(33.333% + 1px),transparent calc(33.333% + 1px)),
+    linear-gradient(to right,transparent 50%,#1c2836 50%,#1c2836 calc(50% + 1px),transparent calc(50% + 1px)),
+    linear-gradient(to right,transparent 66.666%,#1c2836 66.666%,#1c2836 calc(66.666% + 1px),transparent calc(66.666% + 1px)),
+    linear-gradient(to right,transparent 83.333%,#1c2836 83.333%,#1c2836 calc(83.333% + 1px),transparent calc(83.333% + 1px));
+  pointer-events:none;
+}
+.sig-line{
+  position:absolute;top:50%;height:1px;background:color-mix(in srgb,var(--c) 72%,transparent);
+  transform:translateY(-50%);
+}
+.sig-chip{
+  position:absolute;top:50%;transform:translate(-50%,-50%);
+  display:inline-flex;align-items:center;justify-content:center;
+  width:var(--chip-w,68px);height:var(--chip-h,24px);
+  color:var(--c);border:1px solid var(--c);background:#081019;
+  border-radius:999px;padding:1px 3px;
+  font:900 var(--chip-font,11px)/1 ui-monospace,SFMono-Regular,Consolas,monospace;
+  letter-spacing:0;
+  white-space:nowrap;box-shadow:0 0 9px color-mix(in srgb,var(--c) 22%,transparent);
+}
+.radar-row.selected .sig-chip{
+  width:var(--chip-w-selected,82px);height:var(--chip-h-selected,32px);
+  font-size:var(--chip-font-selected,15px);
+  padding:0 1px;
+  font-weight:900;
+  line-height:.88;
+  letter-spacing:-0.045em;
+  text-rendering:geometricPrecision;
+  font-variant-numeric:tabular-nums;
+  box-shadow:0 0 15px color-mix(in srgb,var(--c) 34%,transparent);
+}
+.radar-row.selected .sig-line{height:2px}
+.details{
+  display:none;
+  grid-column:1/-1;
+  width:min(1180px,calc(100% - 24px));
+  min-width:0;
+  justify-self:center;
+  margin:8px 12px 12px;
+  padding:clamp(10px,.9vw,16px);
+  border:1px solid color-mix(in srgb,var(--c) 40%,transparent);
+  border-radius:12px;background:#0b1118;
+  box-shadow:0 8px 24px rgba(0,0,0,.24);
+  overflow:hidden;
+}
+.radar-row.selected .details{display:block}
+.details-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(220px,.72fr);
+  gap:clamp(10px,1vw,18px);
+  align-items:start
+}
+.detail h3{margin:0 0 6px;font:800 clamp(12px,.88vw,15px)/1.2 Orbitron,Roboto,Arial,sans-serif;color:#eef7ff}
+.detail ul{margin:0;padding-left:18px;color:#cbd7e2;font-size:clamp(12px,.82vw,14px);line-height:1.5}
+.detail p{margin:0;color:#9aa8b7;font-size:clamp(12px,.82vw,14px);line-height:1.45}
+.empty-note{color:#617081;font-style:italic}
+.group-gap{height:10px;border-top:1px solid #243142}
+.legend{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 14px;
+  border-top:1px solid #263445;background:#0b1017;color:#8b98a9;font-size:10px
+}
+.legend span{display:inline-flex;align-items:center;gap:6px;font-weight:800}
+.legend i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.quality-banner{
+  display:none;margin:10px 0;padding:8px 10px;border:1px solid #23364a;border-radius:8px;background:#0b131c;color:#9caabc;font-size:12px
+}
+.quality-banner.show{display:block}
+.footer{padding:10px 4px;color:#617081;font-size:10px;text-align:center}
+@media(max-width:1100px){
+  .details-grid{grid-template-columns:1fr}
+}
+@media(max-width:800px){
+  :root{--label-col:clamp(92px,18vw,130px)}
+  .chart-head,.radar-row{grid-template-columns:var(--label-col) minmax(0,1fr)}
+  .material-label{padding-right:6px}
+  .details{margin:8px}
+  .details-grid{grid-template-columns:1fr}
+}
+</style>
+
+<style>
+.radar-row.selected > .material-label,
+.radar-row.selected > .track{
+  min-height:clamp(38px,2.7vw,50px);
+}
+.radar-row.selected > .track{
+  overflow:hidden;
+}
+.details *{
+  max-width:100%;
+  overflow-wrap:anywhere;
+}
+</style>
+
+<style>
+.radar-row.selected{
+  align-items:start;
+}
+.radar-row.selected .details{
+  animation:detailsIn .12s ease-out;
+}
+@keyframes detailsIn{
+  from{opacity:0;transform:translateY(-3px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.detail{
+  min-width:0;
+}
+.detail ul,.detail p{
+  overflow-wrap:anywhere;
+  word-break:normal;
+}
+@media(max-width:1050px){
+  .details-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .radar-detail{
+    grid-column:1/-1;
+  }
+}
+@media(max-width:720px){
+  .details{
+    width:calc(100% - 12px);
+    margin:6px;
+  }
+  .details-grid{
+    grid-template-columns:1fr;
+  }
+  .radar-detail{
+    grid-column:auto;
+  }
+}
+</style>
+
+<style>
+.radar-section,
+.radar-row{
+  contain:layout paint;
+}
+.radar-row.selected{
+  contain:layout;
+}
+</style>
+
+
+<style>
+/* A kijelölt anyagnál maga a bal oldali név legyen a fő fókusz */
+.radar-row.selected{
+  background:
+    linear-gradient(90deg,color-mix(in srgb,var(--c) 14%,transparent),transparent 52%);
+}
+
+.radar-row.selected{
+  grid-template-columns:clamp(150px,15vw,250px) minmax(0,1fr);
+}
+
+.radar-row.selected > .material-label{
+  justify-content:flex-start;
+  align-items:center;
+  padding-left:clamp(16px,1.2vw,24px);
+  padding-right:10px;
+  font-size:clamp(18px,1.55vw,30px) !important;
+  font-weight:900;
+  line-height:1.02;
+  letter-spacing:.01em;
+  overflow:visible;
+  text-overflow:clip;
+  white-space:nowrap;
+  text-shadow:0 0 12px color-mix(in srgb,var(--c) 28%,transparent);
+}
+
+.radar-row.selected > .track{
+  min-height:clamp(44px,3vw,56px);
+}
+
+/* a részletek maradjanak kompaktak, ne nőjenek feleslegesen */
+.radar-row.selected .details{
+  margin-top:6px;
+}
+
+/* kisebb ablaknál is maradjon jól olvasható */
+@media(max-width:900px){
+  .radar-row.selected{
+    grid-template-columns:clamp(125px,20vw,180px) minmax(0,1fr);
+  }
+  .radar-row.selected > .material-label{
+    font-size:clamp(15px,2.2vw,22px) !important;
+    padding-left:10px;
+  }
+}
+</style>
+
+<style>
+.selected-material-inline{
+  display:none;
+  margin:0 0 8px;
+  padding:0 0 6px;
+  border-bottom:1px solid color-mix(in srgb,var(--c) 34%,transparent);
+  color:var(--c);
+  font:800 clamp(14px,1.02vw,18px)/1.1 Orbitron,Roboto,Arial,sans-serif;
+  letter-spacing:.01em;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.radar-row.selected .selected-material-inline{
+  display:block;
+}
+
+/* A kijelölt bal oldali név marad nagy, de soha ne lógjon ki */
+.radar-row.selected{
+  grid-template-columns:var(--label-col) minmax(0,1fr);
+}
+.radar-row.selected > .material-label{
+  justify-content:flex-start;
+  align-items:center;
+  padding-left:clamp(8px,.8vw,14px);
+  padding-right:6px;
+  font-size:clamp(16px,1.2vw,22px) !important;
+  font-weight:900;
+  line-height:1.02;
+  letter-spacing:.005em;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  text-shadow:0 0 12px color-mix(in srgb,var(--c) 28%,transparent);
+}
+
+/* A radar sávon belül semmi nem lóghat ki */
+.track{
+  overflow:hidden;
+}
+.sig-line,.sig-chip{
+  max-width:100%;
+}
+.sig-chip{
+  box-sizing:border-box;
+}
+
+/* A details panel legyen kompakt és biztosan a soron belül maradjon */
+.radar-row.selected .details{
+  width:min(1100px,calc(100% - 20px));
+  max-width:calc(100% - 20px);
+  justify-self:center;
+  margin:8px 10px 12px;
+}
+
+/* A tartalom ne tudjon szétnyúlni */
+.details-grid,
+.detail,
+.detail ul,
+.detail li,
+.detail p{
+  min-width:0;
+  max-width:100%;
+  overflow-wrap:anywhere;
+}
+
+@media(max-width:900px){
+  .radar-row.selected{
+    grid-template-columns:clamp(92px,18vw,130px) minmax(0,1fr);
+  }
+  .radar-row.selected > .material-label{
+    font-size:clamp(14px,1.8vw,20px) !important;
+    padding-left:8px;
+  }
+  .selected-material-inline{
+    font-size:clamp(13px,2.2vw,16px);
+  }
+}
+</style>
+
+<style>
+/* A rács és a kapszulák rétegezése */
+.track::before,
+.track::after{
+  z-index:0;
+}
+.sig-line{
+  z-index:1;
+}
+.sig-chip{
+  z-index:3;
+  isolation:isolate;
+}
+
+/* Maszk a kapszula körül:
+   eltakarja a függőleges háttérrácsot a kapszula mögött,
+   így nem úgy néz ki, mintha átvágná a kapszulát. */
+.sig-chip::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  width:calc(100% + 18px);
+  height:calc(100% + 16px);
+  background:#071019;
+  border-radius:18px;
+  z-index:-1;
+}
+.radar-row.selected .sig-chip::before{
+  width:calc(100% + 22px);
+  height:calc(100% + 18px);
+  border-radius:20px;
+}
+
+/* A szám jobban töltse ki a kapszulát, a kapszula mérete nélkül */
+.sig-chip{
+  padding:0 2px;
+  line-height:.94;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+}
+.radar-row.selected .sig-chip{
+  padding:0 1px;
+  line-height:.84;
+  font-weight:950;
+  letter-spacing:-0.055em;
+}
+
+/* A kapszula felett/alatt futó vízszintes vonal maradjon tiszta */
+.radar-row .track{
+  z-index:0;
+}
+</style>
+
+<style>
+/* V17: kifejezetten a FÜGGŐLEGES 5k/10k/... rácsvonalak javítása */
+
+/* A track saját background-vonalát kikapcsoljuk, hogy minden függőleges rácsvonal
+   egyetlen kontrollált, kapszulák ALATTI rétegen legyen. */
+.track{
+  background-image:none !important;
+  position:relative;
+  isolation:isolate;
+}
+
+/* Függőleges rács: legalsó réteg */
+.track::before{
+  z-index:0 !important;
+  background:
+    linear-gradient(to right,transparent 16.666%,#1c2836 16.666%,#1c2836 calc(16.666% + 1px),transparent calc(16.666% + 1px)),
+    linear-gradient(to right,transparent 33.333%,#1c2836 33.333%,#1c2836 calc(33.333% + 1px),transparent calc(33.333% + 1px)),
+    linear-gradient(to right,transparent 50%,#1c2836 50%,#1c2836 calc(50% + 1px),transparent calc(50% + 1px)),
+    linear-gradient(to right,transparent 66.666%,#1c2836 66.666%,#1c2836 calc(66.666% + 1px),transparent calc(66.666% + 1px)),
+    linear-gradient(to right,transparent 83.333%,#1c2836 83.333%,#1c2836 calc(83.333% + 1px),transparent calc(83.333% + 1px)) !important;
+}
+
+/* A bal oldali segédvonal is a kapszulák alatt fusson */
+.track::after{
+  z-index:0 !important;
+}
+
+/* A vízszintes radarvonal a függőleges háló fölött, de a kapszula alatt */
+.sig-line{
+  z-index:1 !important;
+}
+
+/* A kapszula teljesen fedje el maga mögött a függőleges rácsvonalat.
+   Emiatt a rács a kapszula tetején megáll, alatta újra látszik. */
+.sig-chip{
+  z-index:4 !important;
+  background:#081019 !important;
+  box-shadow:
+    0 0 0 2px #081019,
+    0 0 9px color-mix(in srgb,var(--c) 22%,transparent) !important;
+}
+
+/* A korábbi túl nagy maszkoló pszeudo-elemet kikapcsoljuk.
+   Most maga a kapszula takarja pontosan a függőleges rácsot. */
+.sig-chip::before{
+  display:none !important;
+}
+
+.radar-row.selected .sig-chip{
+  background:#081019 !important;
+  box-shadow:
+    0 0 0 2px #081019,
+    0 0 15px color-mix(in srgb,var(--c) 34%,transparent) !important;
+}
+</style>
+
+<style>
+/* V23: a függőleges rács egyetlen összefüggő háttérrétegen fusson */
+#rows{
+  position:relative;
+  isolation:isolate;
+}
+#rows::before{
+  content:"";
+  position:absolute;
+  top:0;
+  bottom:0;
+  left:var(--label-col);
+  right:0;
+  pointer-events:none;
+  z-index:0;
+  background:
+    linear-gradient(to right,transparent 16.666%,#1c2836 16.666%,#1c2836 calc(16.666% + 1px),transparent calc(16.666% + 1px)),
+    linear-gradient(to right,transparent 33.333%,#1c2836 33.333%,#1c2836 calc(33.333% + 1px),transparent calc(33.333% + 1px)),
+    linear-gradient(to right,transparent 50%,#1c2836 50%,#1c2836 calc(50% + 1px),transparent calc(50% + 1px)),
+    linear-gradient(to right,transparent 66.666%,#1c2836 66.666%,#1c2836 calc(66.666% + 1px),transparent calc(66.666% + 1px)),
+    linear-gradient(to right,transparent 83.333%,#1c2836 83.333%,#1c2836 calc(83.333% + 1px),transparent calc(83.333% + 1px));
+}
+#rows::after{
+  content:"";
+  position:absolute;
+  top:0;
+  bottom:0;
+  left:calc(var(--label-col) + (100% - var(--label-col)) * 0.08);
+  width:1px;
+  background:#33465a;
+  opacity:.8;
+  pointer-events:none;
+  z-index:0;
+}
+.radar-row,
+.group-gap{
+  position:relative;
+  z-index:1;
+}
+.track{
+  background-image:none !important;
+  background:transparent !important;
+}
+.track::before,
+.track::after{
+  display:none !important;
+}
+.sig-line{
+  z-index:2 !important;
+}
+.sig-chip{
+  z-index:4 !important;
+  background:#081019 !important;
+  box-shadow:
+    0 0 0 2px #081019,
+    0 0 9px color-mix(in srgb,var(--c) 22%,transparent) !important;
+}
+.radar-row.selected .sig-chip{
+  box-shadow:
+    0 0 0 2px #081019,
+    0 0 15px color-mix(in srgb,var(--c) 34%,transparent) !important;
+}
+</style>
+
+<style>
+/* V25 — material → blueprint slot → exact component registry/popover */
+.usage-family{
+  appearance:none;border:0;background:transparent;color:#35d9ff;padding:0;margin:0;
+  min-height:0;border-radius:3px;font:inherit;font-weight:800;line-height:inherit;
+  text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;
+  cursor:pointer;vertical-align:baseline;
+}
+.usage-family:hover,.usage-family:focus-visible{
+  color:#b8f4ff;text-shadow:0 0 8px rgba(0,217,255,.35);outline:none;
+}
+.component-popover{
+  position:fixed;z-index:9999;display:none;
+  width:min(520px,calc(100vw - 16px));max-height:min(68vh,620px);overflow:auto;
+  border:1px solid #31536c;border-radius:10px;background:#0b1118;
+  box-shadow:0 18px 55px rgba(0,0,0,.62),0 0 0 1px rgba(0,217,255,.06);
+  color:#d9e6f2;padding:10px;
+}
+.component-popover.open{display:block}
+.component-popover *{box-sizing:border-box}
+.component-popover-head{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #203244}
+.component-popover-title{font-weight:900;color:#f2f8ff;line-height:1.25;min-width:0;overflow-wrap:anywhere}
+.component-popover-count{margin-left:auto;white-space:nowrap;font-size:11px;color:#7890a5;border:1px solid #263c50;border-radius:999px;padding:2px 7px}
+.component-list{display:grid;gap:6px}
+.component-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center;padding:8px;border:1px solid #1e3345;border-radius:8px;background:#0d1721}
+.component-name,.component-name-static{min-width:0;font-weight:850;color:#78e8ff;overflow-wrap:anywhere}
+a.component-name{text-decoration:none}
+a.component-name:hover{text-decoration:underline;color:#c7f8ff}
+.component-meta{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.component-chip{border:1px solid #35506a;border-radius:5px;padding:2px 5px;font-size:10px;line-height:1.2;color:#b8c8d8;background:#0a121a;white-space:nowrap}
+.component-manufacturer{grid-column:1/-1;font-size:10px;color:#74899e;overflow-wrap:anywhere}
+.component-note{grid-column:1/-1;font-size:10px;color:#e7b85c;line-height:1.35}
+.component-link-pending{grid-column:1/-1;font-size:10px;color:#8593a1;font-style:italic}
+.component-empty{padding:10px;border:1px dashed #31465a;border-radius:8px;color:#91a2b4;line-height:1.45;font-size:12px}
+.component-coverage{margin-top:8px;padding-top:7px;border-top:1px solid #1d2b38;color:#6f8498;font-size:10px;line-height:1.35}
+@media(max-width:620px){
+  .component-popover{max-height:70vh;padding:8px}
+  .component-item{grid-template-columns:1fr}
+  .component-meta{justify-content:flex-start}
+}
+</style>
+
+<style>
+/* Refinery bonus — separate detail column, V25 visual language preserved */
+.refinery-detail{min-width:0}
+.refinery-systems{display:grid;gap:8px}
+.refinery-system{display:grid;grid-template-columns:minmax(58px,74px) minmax(0,1fr);gap:8px;align-items:start}
+.refinery-system-name{color:#8fb9d2;font:800 clamp(11px,.76vw,13px)/1.25 ui-monospace,SFMono-Regular,Consolas,monospace}
+.refinery-system-values{min-width:0;color:#cbd7e2;font-size:clamp(11px,.78vw,13px);line-height:1.45;overflow-wrap:anywhere}
+.refinery-sep{color:#556576;padding:0 4px}
+.refinery-empty{color:#7f8da0;font-style:italic}
+.refinery-bonus{color:#7ddfff;font-weight:800;white-space:nowrap}
+
+/* 4 oszlop: Q500 | High Q | Radar | Finomító bónusz */
+.details-grid{
+  grid-template-columns:minmax(0,1fr) minmax(0,1.12fr) minmax(170px,.58fr) minmax(250px,.95fr);
+}
+.radar-row.selected .details{
+  width:min(1400px,calc(100% - 20px));
+  max-width:calc(100% - 20px);
+}
+@media(max-width:1250px){
+  .details-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .radar-detail,.refinery-detail{grid-column:auto;}
+}
+@media(max-width:760px){
+  .details-grid{grid-template-columns:1fr;}
+  .radar-detail,.refinery-detail{grid-column:auto;}
+  .refinery-system{grid-template-columns:1fr}
+  .refinery-system-name{margin-bottom:2px}
+}
+</style>
+
+
+<style>
+.quality-loc-block{
+  margin:0 0 10px;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:none;
+}
+.quality-loc-title{
+  margin:0 0 8px;
+  color:#eef7ff;
+  font:800 clamp(12px,.9vw,15px)/1.2 Orbitron,Roboto,Arial,sans-serif;
+}
+.quality-loc-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:6px;
+}
+.quality-loc-row{
+  display:grid;
+  grid-template-columns:minmax(150px,220px) minmax(0,1fr);
+  gap:10px;
+  align-items:start;
+}
+.quality-loc-left{
+  min-width:0;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  gap:8px;
+}
+.quality-loc-system{
+  color:#9fd9ff;
+  font:900 clamp(11px,.78vw,13px)/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;
+}
+.quality-loc-chance{
+  color:#42d8ff;
+  font:900 clamp(12px,.92vw,16px)/1.1 ui-monospace,SFMono-Regular,Consolas,monospace;
+  white-space:nowrap;
+}
+.quality-loc-right{
+  min-width:0;
+  color:#d7e2ee;
+  font-size:clamp(11px,.8vw,13px);
+  line-height:1.42;
+  overflow-wrap:anywhere;
+}
+.quality-loc-place{white-space:normal}
+.quality-loc-guide-link{
+  color:#42d8ff;
+  font-weight:800;
+  text-decoration:underline;
+  text-decoration-style:dotted;
+  text-underline-offset:3px;
+}
+.quality-loc-guide-link:hover,.quality-loc-guide-link:focus-visible{
+  color:#b8f4ff;
+  text-shadow:0 0 8px rgba(0,217,255,.28);
+  outline:none;
+}
+.quality-loc-tier{display:inline}
+.quality-loc-tier + .quality-loc-tier::before{content:"  |  ";color:#556576;padding:0 5px}
+.quality-loc-tier-chance{color:#42d8ff;font-weight:900;white-space:nowrap;margin-right:5px}
+.quality-loc-sep{color:#556576;padding:0 6px}
+.quality-loc-note{
+  grid-column:2;
+  margin-top:2px;
+  color:#d7a960;
+  font-size:clamp(10px,.72vw,11px);
+  line-height:1.35;
+}
+@media(max-width:720px){
+  .quality-loc-row{grid-template-columns:1fr;gap:4px}
+  .quality-loc-note{grid-column:1}
+}
+</style>
+
+
+<style>
+.data-sources{
+  flex:1 1 100%;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:2px;
+  padding-top:8px;
+  border-top:1px solid #18293a;
+}
+.data-sources-label{
+  color:#77899b;
+  font-size:11px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.source-link{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  min-height:28px;
+  padding:4px 9px;
+  border:1px solid #2b506b;
+  border-radius:999px;
+  background:#09131c;
+  color:#7bdfff;
+  font-size:11px;
+  font-weight:850;
+  text-decoration:none;
+  box-shadow:0 0 0 1px rgba(0,217,255,.025) inset;
+  transition:.14s ease;
+}
+.source-link::after{content:"↗";font-size:10px;color:#55aeca}
+.source-link:hover,.source-link:focus-visible{
+  color:#d2f8ff;
+  border-color:#39c9ef;
+  background:#0c1a25;
+  box-shadow:0 0 12px rgba(0,217,255,.13);
+  outline:none;
+}
+.footer{
+  display:grid;
+  gap:5px;
+  padding:12px 6px 8px;
+  color:#667789;
+  font-size:10px;
+  line-height:1.45;
+  text-align:center;
+}
+.footer a{color:#75b8d6;text-decoration:none}
+.footer a:hover{text-decoration:underline;color:#b9edff}
+.footer strong{color:#8fa4b8}
+</style>
+
+
+<style>
+/* Target Mining — additive feature, existing V25 layout preserved */
+.target-mining-panel{
+  display:none;
+  margin:0 0 12px;
+  padding:10px 12px;
+  border:1px solid #1e3448;
+  border-radius:10px;
+  background:#0a1118;
+}
+.target-mining-panel.open{display:block}
+.target-mining-head{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px
+}
+.target-mining-title{
+  margin:0 auto 0 0;color:#eef7ff;
+  font:800 clamp(13px,.92vw,16px)/1.2 Orbitron,Roboto,Arial,sans-serif
+}
+.target-mining-controls{
+  display:grid;
+  grid-template-columns:minmax(150px,210px) minmax(180px,260px);
+  gap:8px;align-items:center
+}
+.target-mining-controls select,.target-mining-controls button{width:100%}
+.target-mining-chips{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;min-height:28px
+}
+.target-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  min-height:28px;padding:3px 8px;border:1px solid #2a4c66;border-radius:999px;
+  background:#0b1620;color:#cfe6f7;font:800 11px/1.1 ui-monospace,SFMono-Regular,Consolas,monospace
+}
+.target-chip button{
+  min-height:0;width:auto;border:0;background:transparent;color:#6f8da5;padding:0 1px;font-size:14px;line-height:1
+}
+.target-chip button:hover{color:#d7e9f7}
+.target-mining-status{color:#76899b;font-size:11px;margin-left:2px}
+.target-results{
+  margin-top:8px;padding-top:8px;border-top:1px solid #162838
+}
+.target-results-title{margin:0 0 6px;color:#a8bed0;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
+.target-result-list{display:grid;gap:5px}
+.target-result-row{
+  display:grid;grid-template-columns:minmax(70px,90px) minmax(140px,260px) minmax(75px,90px) minmax(0,1fr);
+  gap:8px;align-items:baseline;padding:5px 0;border-bottom:1px solid #101d29
+}
+.target-result-row:last-child{border-bottom:0}
+.target-result-system{color:#8fb9d2;font:800 11px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace}
+.target-result-place{color:#e2edf6;font-weight:800;font-size:12px;overflow-wrap:anywhere}
+.target-result-count{color:#42d8ff;font:900 11px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:nowrap}
+.target-result-materials{color:#9dafbe;font-size:11px;line-height:1.35;overflow-wrap:anywhere}
+.target-result-materials strong{color:#c8d8e5;font-weight:800}
+.target-result-empty{color:#7d8c9c;font-size:12px;font-style:italic;padding:3px 0}
+#targetMiningToggle.active,#targetRadarFocus.active{border-color:#00b8dd;color:#86ecff;background:#071820}
+.target-material-check{
+  appearance:none;
+  -webkit-appearance:none;
+  width:15px;height:15px;min-width:15px;
+  margin:0 7px 0 0;
+  border:1px solid #3a5369;border-radius:3px;
+  background:#071019;cursor:pointer;position:relative;
+  flex:0 0 auto;
+}
+.target-material-check:hover{border-color:var(--c);box-shadow:0 0 7px color-mix(in srgb,var(--c) 24%,transparent)}
+.target-material-check:checked{border-color:var(--c);background:color-mix(in srgb,var(--c) 18%,#071019);box-shadow:0 0 8px color-mix(in srgb,var(--c) 34%,transparent)}
+.target-material-check:checked::after{
+  content:"✓";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  color:var(--c);font:900 11px/1 Arial,sans-serif;
+}
+.material-label-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.radar-row.target-chosen:not(.selected) .material-label{
+  text-shadow:0 0 9px color-mix(in srgb,var(--c) 22%,transparent);
+}
+.radar-row.target-focus-preview{
+  min-height:0;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--c) 12%,transparent),transparent 64%);
+}
+.radar-row.target-focus-preview > .material-label,
+.radar-row.target-focus-preview > .track{
+  min-height:clamp(40px,2.9vw,52px);
+}
+.radar-row.target-focus-preview > .material-label{
+  justify-content:flex-start;
+  align-items:center;
+  padding-left:clamp(8px,.8vw,14px);
+  padding-right:6px;
+  font-size:clamp(15px,1.08vw,20px);
+  font-weight:900;
+  line-height:1.02;
+  text-shadow:0 0 12px color-mix(in srgb,var(--c) 28%,transparent);
+}
+.radar-row.target-focus-preview .sig-chip{
+  width:var(--chip-w-selected,82px);
+  height:var(--chip-h-selected,32px);
+  font-size:var(--chip-font-selected,15px);
+  padding:0 1px;
+  font-weight:950;
+  line-height:.84;
+  letter-spacing:-0.055em;
+  box-shadow:0 0 15px color-mix(in srgb,var(--c) 34%,transparent);
+}
+.radar-row.target-focus-preview .sig-chip::before{
+  width:calc(100% + 18px);
+  height:calc(100% + 14px);
+}
+.radar-row.target-focus-preview .sig-line{height:2px}
+@media(max-width:900px){
+  .radar-row.target-focus-preview > .material-label{
+    font-size:clamp(14px,2.05vw,18px);
+    padding-left:8px;
+  }
+  /* Mobile safety: selected/open and Target Mining collapsed rows use the same
+     compact capsule envelope. Desktop keeps the large selected capsule style. */
+  .radar-row.selected .sig-chip,
+  .radar-row.target-focus-preview .sig-chip{
+    width:var(--chip-w-mobile-safe,var(--chip-w,30px));
+    height:var(--chip-h-mobile-safe,var(--chip-h,20px));
+    font-size:var(--chip-font-mobile-safe,var(--chip-font,9px));
+    line-height:.92;
+    letter-spacing:-.075em;
+    padding:0 1px;
+  }
+  .radar-row.selected .sig-chip::before,
+  .radar-row.target-focus-preview .sig-chip::before{
+    width:calc(100% + 8px);
+    height:calc(100% + 8px);
+    border-radius:14px;
+  }
+  .radar-row.selected .sig-line,
+  .radar-row.target-focus-preview .sig-line{height:1px}
+}
+@media(max-width:900px){
+  .target-mining-controls{grid-template-columns:1fr 1fr}
+  .target-result-row{grid-template-columns:80px minmax(0,1fr);gap:4px 8px}
+  .target-result-count,.target-result-materials{grid-column:2}
+}
+@media(max-width:560px){
+  .target-mining-controls{grid-template-columns:1fr}
+  .target-result-row{grid-template-columns:1fr}
+  .target-result-count,.target-result-materials{grid-column:1}
+}
+</style>
+
+
+<style id="mobile-radar-fit-fix">
+/* Mobile-only radar fit fix. Desktop and non-mobile behaviour stay untouched. */
+@media(max-width:620px){
+  .chart-shell{
+    overflow-x:hidden;
+    overflow-y:visible;
+  }
+  .chart-head,
+  .radar-row,
+  .radar-row.selected{
+    grid-template-columns:78px minmax(0,1fr);
+  }
+  .chart-head .left,
+  .material-label,
+  .radar-row.selected > .material-label,
+  .radar-row.target-focus-preview > .material-label{
+    padding-left:6px;
+    padding-right:6px;
+  }
+  .material-label,
+  .radar-row.selected > .material-label,
+  .radar-row.target-focus-preview > .material-label{
+    font-size:clamp(12px,4.9vw,15px);
+  }
+  .radar-row.selected .details{
+    width:calc(100vw - 24px);
+    max-width:calc(100vw - 24px);
+    justify-self:start;
+    margin-left:6px;
+    margin-right:6px;
+    position:sticky;
+    left:6px;
+  }
+  /* Mobile only: 5+ digit values use a REAL wider capsule so the layout
+     can account for the bubble width and prevent collisions. */
+  .sig-chip.sig-chip-long,
+  .radar-row.selected .sig-chip.sig-chip-long,
+  .radar-row.target-focus-preview .sig-chip.sig-chip-long{
+    width:calc(var(--chip-w-mobile-safe,var(--chip-w,42px)) + var(--sig-long-extra,16px)) !important;
+    background:#081019 !important;
+    border-color:var(--c) !important;
+    box-shadow:
+      0 0 0 2px #081019,
+      0 0 9px color-mix(in srgb,var(--c) 22%,transparent) !important;
+    overflow:visible;
+    font-size:calc(var(--chip-font-mobile-safe,var(--chip-font,11px)) * 0.96) !important;
+    letter-spacing:-0.045em !important;
+    padding:0 2px !important;
+  }
+  .radar-row.selected .sig-chip.sig-chip-long,
+  .radar-row.target-focus-preview .sig-chip.sig-chip-long{
+    box-shadow:
+      0 0 0 2px #081019,
+      0 0 13px color-mix(in srgb,var(--c) 30%,transparent) !important;
+  }
+  .sig-chip.sig-chip-long::after{display:none !important}
+
+  /* Grey / ROC green / FPS light-blue long rows: two mobile rows, no horizontal scroll. */
+  .radar-row.mobile-two-row > .track,
+  .radar-row.mobile-two-row > .material-label{
+    min-height:76px !important;
+  }
+  .radar-row.mobile-two-row .sig-line{display:none !important}
+  .radar-row.mobile-two-row > .track{
+    background:
+      linear-gradient(to bottom,transparent calc(25% - .5px),color-mix(in srgb,var(--c) 62%,transparent) 25%,transparent calc(25% + .5px)),
+      linear-gradient(to bottom,transparent calc(75% - .5px),color-mix(in srgb,var(--c) 62%,transparent) 75%,transparent calc(75% + .5px)) !important;
+  }
+}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <h1>sPg Material Radar Signature & Crafting Quality</h1>
+    <select id="mode">
+      <option id="modeRadar" value="radar">Radar sorrend</option>
+      <option id="modeQ500" value="q500">Alacsony Quality · Q500 / Integrity</option>
+      <option id="modeQHigh" value="qhigh">Magas Quality · Q800 minimum / Q900+ funkcionális</option>
+    </select>
+    <button id="craftOnly" class="active">Csak crafting anyagok</button>
+    <button id="clear">Kiemelés törlése</button>
+    <button id="targetMiningToggle" type="button" aria-expanded="false">Célzott bányászat</button>
+    <select id="language" aria-label="Nyelv / Language" title="Nyelv / Language">
+      <option value="hu">Magyar</option>
+      <option value="en">English</option>
+    </select>
+    <div id="dataSources" class="data-sources" aria-label="Adatforrások">
+      <span id="dataSourcesLabel" class="data-sources-label">Adatforrások</span>
+      <a id="sourceBp" class="source-link" href="https://api.star-citizen.wiki/" target="_blank" rel="noopener noreferrer" title="Blueprint és komponens adatok">BP · Star Citizen Wiki API</a>
+      <a id="sourceRefinery" class="source-link" href="https://uexcorp.space/" target="_blank" rel="noopener noreferrer" title="Finomító bónusz adatok">Finomító · UEX</a>
+      <a id="sourceQuality" class="source-link" href="https://scmdb.net/?page=mine" target="_blank" rel="noopener noreferrer" title="Anyagminőség és lelőhely adatok">Anyagminőség · SCMDB</a>
+    </div>
+  </div>
+
+  <section id="targetMiningPanel" class="target-mining-panel" aria-hidden="true">
+    <div class="target-mining-head">
+      <h2 id="targetMiningTitle" class="target-mining-title">Célzott bányászat</h2>
+      <span id="targetMiningHint" class="target-mining-status">Jelöld be az anyagokat közvetlenül a nagy radarlistában. Legalább 2 anyag kell a közös lelőhely kereséséhez.</span>
+    </div>
+    <div class="target-mining-controls">
+      <select id="targetSystem" aria-label="Rendszer">
+        <option value="all">Minden rendszer</option>
+        <option value="Stanton">Stanton</option>
+        <option value="Pyro">Pyro</option>
+        <option value="Nyx">Nyx</option>
+      </select>
+      <button id="targetRadarFocus" type="button">Csak ezeket a radaron</button>
+    </div>
+    <div id="targetMaterialChips" class="target-mining-chips"></div>
+    <div id="targetResults" class="target-results"></div>
+  </section>
+
+
+  <div id="qualityBanner" class="quality-banner"></div>
+
+  <section class="chart-shell">
+    <div class="chart-head">
+      <div id="materialHead" class="left">Anyag</div>
+      <div class="scale" id="scale"></div>
+    </div>
+    <div id="rows"></div>
+    <div class="legend">
+      <span style="--c:var(--legendary)"><i></i>Legendary (Max 2×)</span>
+      <span style="--c:var(--epic)"><i></i>Epic (Max 3×)</span>
+      <span style="--c:var(--rare)"><i></i>Rare (Max 4×)</span>
+      <span style="--c:var(--uncommon)"><i></i>Uncommon (Max 5×)</span>
+      <span style="--c:var(--common)"><i></i>Common (Max 6×)</span>
+      <span style="--c:var(--roc)"><i></i>ROC Mineables</span>
+      <span style="--c:var(--fps)"><i></i>FPS Mineables</span>
+    </div>
+  </section>
+  <div class="footer">
+    <div><strong id="footerDataLabel">Adatok:</strong> <a href="https://api.star-citizen.wiki/" target="_blank" rel="noopener noreferrer">Star Citizen Wiki API</a> · <a href="https://uexcorp.space/" target="_blank" rel="noopener noreferrer">UEX</a> · <a href="https://scmdb.net/?page=mine" target="_blank" rel="noopener noreferrer">SCMDB</a></div>
+    <div id="footerDisclaimer">Nem hivatalos Star Citizen rajongói segédoldal, nem áll kapcsolatban a Cloud Imperium Grouppal. A harmadik féltől származó tartalmak és játékadatok jogai a megfelelő jogosultakat illetik.</div>
+    <div><a id="footerOfficial" href="https://robertsspaceindustries.com/" target="_blank" rel="noopener noreferrer">Hivatalos Star Citizen oldal</a></div>
+  </div>
+</div>
+<div id="componentPopover" class="component-popover" role="dialog" aria-live="polite" aria-hidden="true"></div>
+
+<!--
+MINING CRAFT QUALITY AUDIT / UPDATE PROTOCOL
+Verified against Star Citizen LIVE 4.10.0-LIVE.12519617 data and the supplied blueprint screenshots on 2026-08-28.
+
+WHEN REFRESHING THIS FILE IN A LATER PATCH, DO NOT CLASSIFY BY ITEM NAME ALONE.
+For every current craftable Mining Laser, Mining Module and Ore Pod blueprint:
+1. Check the current LIVE blueprint on api.star-citizen.wiki, not an older cached patch.
+2. Record each recipe input: slot/aspect, material, minimum quality, and whether changing quality changes an output stat.
+3. Q500 / LOW bucket: inputs used only for Integrity / HP, unless the blueprint itself enforces a minimum quality >= 800.
+4. HIGH bucket:
+   - any input whose quality changes a functional stat (laser power, performance, etc.); target Q900+ unless the game gives a stricter exact gate;
+   - any recipe input with minimum quality >= 800, even if higher quality has no additional effect. Preserve the exact minimum in the label.
+5. Never assume all items in the same family share the same minimum quality. Verify every current craftable blueprint after each patch.
+
+CURRENT 4.10 VERIFIED PATTERNS:
+MINING LASERS: all current craftable laser recipes use Frame=Iron, Emitter=Sadaryx, Bus Bars=Copper. Frame affects Integrity -> LOW. Emitter and Bus Bars affect Laser Power -> HIGH / Q900+ target.
+Current craftable laser family observed in LIVE data includes: Arbor MHV, Arbor MH1, Arbor MH2, Hofstede S00/S0/S1/S2, Impact I/II, Klein S1/S2, Lancet MH1/MH2, Lawson, Pitman, S0 Helix, Helix I/II.
+MINING MODULES: Stampede and Torrent III use Q500 Iron Case + Q500 Copper Wiring. Clearcut, Deluge and Overrun require Q800 Iron Case + Q800 Copper Wiring; higher quality has no extra effect.
+ORE PODS: standard Argo / Drake / MISC pods stay in the LOW bucket. GOLEM MC-4 and MISC Enhanced require Q800 Iron and belong in HIGH; higher quality has no extra effect.
+
+COMPONENT LINK REGISTRY UPDATE PROTOCOL / V25+
+Purpose: material card usage labels can resolve to concrete craftable outputs and exact API item pages.
+Do NOT infer component membership from family names alone.
+
+PATCH REFRESH PROCEDURE:
+1. Resolve the current LIVE version first via the Star Citizen Wiki API default game-version endpoint.
+2. Query current craftable blueprints for the tracked output families: Power Plant, Shield Generator, Cooler, Quantum Drive, Radar, Ship Weapon, Mining Laser, Mining Module, Ore Pod.
+3. For every blueprint, capture the OUTPUT UUID/name and every INPUT tuple: aspect/slot, ingredient UUID/name, amount, minimum quality, and exposed quality modifier data.
+4. Join every blueprint OUTPUT UUID to the exact item record. Capture exact name, Size, Class, Grade, Manufacturer and item UUID.
+5. Build the user relation ONLY from verified blueprint tuples:
+   material → blueprint slot/aspect → concrete output component.
+6. Exact links must point to the verified item URL/UUID. Never guess a slug. If the item URL cannot be verified, keep url=null and show a non-clickable entry.
+7. Preserve sourceVersion + verification on every registry row. Do not silently overwrite API conflicts. Grade conflicts such as Lawson/S0 Helix must retain a note until reconciled from the same LIVE dataset.
+8. Mining Module and Ore Pod low/high bucket membership must follow their verified recipe minimum quality. Current 4.10 Q800-gated entries stay HIGH even when quality above 800 has no extra effect.
+9. Ship Weapon is architecturally supported, but a complete weapon registry must be generated from current blueprints before claiming exact coverage.
+10. After refresh, regression-test representative material/slot mappings, broken URLs, duplicate UUIDs/names, size/class/grade metadata, and horizontal overflow on desktop/mobile.
+
+API REFRESH KEYS TO USE (do not rely on display-name guessing):
+- /api/game-versions/default
+- /api/blueprints and /api/blueprints/{blueprint}
+- blueprint filters by output UUID/name/type/class and ingredient UUID/name when available
+- /api/items and /api/items/{identifier}
+Primary join key: output item UUID.
+Fallback display matching is diagnostic only, never authoritative.
+
+-->
+<script>
+const COMPONENT_REGISTRY = [{"name":"JS-300","family":"Power Plant","size":"S1","class":"Military","grade":"A","manufacturer":"Amon & Reese Co.","url":"https://api.star-citizen.wiki/items/js-300","recipe":{"Shell":"Stileron","Voltage Regulator":"Beryl","Stator Cores":"Savrilium"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"JS-400","family":"Power Plant","size":"S2","class":"Military","grade":"A","manufacturer":"Amon & Reese Co.","url":"https://api.star-citizen.wiki/items/js-400","recipe":{"Shell":"Stileron","Voltage Regulator":"Beryl","Stator Cores":"Savrilium"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"JS-500","family":"Power Plant","size":"S3","class":"Military","grade":"A","manufacturer":"Amon & Reese Co.","url":"https://api.star-citizen.wiki/items/js-500","recipe":{"Shell":"Stileron","Voltage Regulator":"Beryl","Stator Cores":"Savrilium"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Slipstream","family":"Power Plant","size":"S1","class":"Stealth","grade":"A","manufacturer":"Tyler Design & Tech","url":"https://api.star-citizen.wiki/items/slipstream","recipe":{"Shell":"Lindinium","Voltage Regulator":"Beryl","Stator Cores":"Ouratite"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"FR-66","family":"Shield Generator","size":"S1","class":"Military","grade":"A","manufacturer":"Gorgon Defender Industries","url":"https://api.star-citizen.wiki/items/fr-66","recipe":{"Shell":"Stileron","Field Array":"Stileron","Frequency Controller":"Feynmaline"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"FR-76","family":"Shield Generator","size":"S2","class":"Military","grade":"A","manufacturer":"Gorgon Defender Industries","url":"https://api.star-citizen.wiki/items/fr-76","recipe":{"Shell":"Stileron","Field Array":"Stileron","Frequency Controller":"Feynmaline"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"FR-86","family":"Shield Generator","size":"S3","class":"Military","grade":"A","manufacturer":"Gorgon Defender Industries","url":"https://api.star-citizen.wiki/items/fr-86","recipe":{"Shell":"Stileron","Field Array":"Stileron","Frequency Controller":"Feynmaline"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Mirage","family":"Shield Generator","size":"S1","class":"Stealth","grade":"A","manufacturer":"Ascension Astro","url":"https://api.star-citizen.wiki/items/mirage","recipe":{"Shell":"Savrilium","Field Array":"Savrilium","Frequency Controller":"Feynmaline"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Glacier","family":"Cooler","size":"S1","class":"Military","grade":"A","manufacturer":"Aegis Dynamics","url":"https://api.star-citizen.wiki/items/glacier","recipe":{"Shell":"Stileron","Coolant":"Pressurized Ice","Pump Impeller":"Borase"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"SnowBlind","family":"Cooler","size":"S1","class":"Stealth","grade":"A","manufacturer":"Tyler Design & Tech","url":"https://api.star-citizen.wiki/items/snowblind","recipe":{"Shell":"Savrilium","Coolant":"Pressurized Ice","Pump Impeller":"Borase"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Avalanche","family":"Cooler","size":"S2","class":"Military","grade":"A","manufacturer":"Aegis Dynamics","url":"https://api.star-citizen.wiki/items/avalanche","recipe":{"Shell":"Stileron","Coolant":"Pressurized Ice","Pump Impeller":"Borase"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"NightFall","family":"Cooler","size":"S2","class":"Stealth","grade":"A","manufacturer":"Tyler Design & Tech","url":"https://api.star-citizen.wiki/items/nightfall","recipe":{"Shell":"Savrilium","Coolant":"Pressurized Ice","Pump Impeller":"Borase"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Blizzard","family":"Cooler","size":"S3","class":"Military","grade":"A","manufacturer":"Aegis Dynamics","url":"https://api.star-citizen.wiki/items/blizzard","recipe":{"Shell":"Stileron","Coolant":"Pressurized Ice","Pump Impeller":"Borase"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Eos","family":"Quantum Drive","size":"S1","class":"Civilian","grade":"C","manufacturer":"Roberts Space Industries","url":"https://api.star-citizen.wiki/items/eos","recipe":{"Case":"Tin","Injector Nozzles":"Iron","Containment Matrix":"Hephaestanite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Hyperion","family":"Quantum Drive","size":"S1","class":"Civilian","grade":"B","manufacturer":"Roberts Space Industries","url":"https://api.star-citizen.wiki/items/hyperion","recipe":{"Case":"Iron","Injector Nozzles":"Iron","Containment Matrix":"Laranite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Atlas","family":"Quantum Drive","size":"S1","class":"Civilian","grade":"A","manufacturer":"Roberts Space Industries","url":"https://api.star-citizen.wiki/items/atlas","recipe":{"Case":"Torite","Injector Nozzles":"Tungsten","Containment Matrix":"Bexalite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Khaos","family":"Quantum Drive","size":"S2","class":"Civilian","grade":"C","manufacturer":"Roberts Space Industries","url":"https://api.star-citizen.wiki/items/khaos","recipe":{"Case":"Tin","Injector Nozzles":"Iron","Containment Matrix":"Hephaestanite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Aither","family":"Quantum Drive","size":"S2","class":"Civilian","grade":"B","manufacturer":"Roberts Space Industries","url":"https://api.star-citizen.wiki/items/aither","recipe":{"Case":"Iron","Injector Nozzles":"Iron","Containment Matrix":"Laranite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Hemera","family":"Quantum Drive","size":"S2","class":"Civilian","grade":"A","manufacturer":"Roberts Space Industries","url":"https://api.star-citizen.wiki/items/hemera","recipe":{"Case":"Torite","Injector Nozzles":"Tungsten","Containment Matrix":"Bexalite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Metis","family":"Quantum Drive","size":"S3","class":"Civilian","grade":"C","manufacturer":"Roberts Space Industries","url":"https://api.star-citizen.wiki/items/metis","recipe":{"Case":"Tin","Injector Nozzles":"Iron","Containment Matrix":"Hephaestanite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Tyche","family":"Quantum Drive","size":"S3","class":"Civilian","grade":"B","manufacturer":"Roberts Space Industries","url":"https://api.star-citizen.wiki/items/tyche","recipe":{"Case":"Iron","Injector Nozzles":"Iron","Containment Matrix":"Laranite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Erebos","family":"Quantum Drive","size":"S3","class":"Civilian","grade":"A","manufacturer":"Roberts Space Industries","url":"https://api.star-citizen.wiki/items/erebos","recipe":{"Case":"Torite","Injector Nozzles":"Tungsten","Containment Matrix":"Bexalite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Flood","family":"Quantum Drive","size":"S1","class":"Civilian","grade":"D","manufacturer":"ArcCorp","url":"https://api.star-citizen.wiki/items/flood","recipe":{"Case":"Tin","Injector Nozzles":"Iron","Containment Matrix":"Corundum"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Rush","family":"Quantum Drive","size":"S1","class":"Civilian","grade":"C","manufacturer":"ArcCorp","url":"https://api.star-citizen.wiki/items/rush","recipe":{"Case":"Tin","Injector Nozzles":"Iron","Containment Matrix":"Hephaestanite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Burst","family":"Quantum Drive","size":"S1","class":"Civilian","grade":"B","manufacturer":"ArcCorp","url":"https://api.star-citizen.wiki/items/burst","recipe":{"Case":"Iron","Injector Nozzles":"Iron","Containment Matrix":"Laranite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Cascade","family":"Quantum Drive","size":"S2","class":"Civilian","grade":"D","manufacturer":"ArcCorp","url":"https://api.star-citizen.wiki/items/cascade","recipe":{"Case":"Tin","Injector Nozzles":"Iron","Containment Matrix":"Corundum"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Torrent","family":"Quantum Drive","size":"S2","class":"Civilian","grade":"C","manufacturer":"ArcCorp","url":"https://api.star-citizen.wiki/items/torrent","recipe":{"Case":"Tin","Injector Nozzles":"Iron","Containment Matrix":"Hephaestanite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Flash","family":"Quantum Drive","size":"S2","class":"Civilian","grade":"B","manufacturer":"ArcCorp","url":"https://api.star-citizen.wiki/items/flash","recipe":{"Case":"Iron","Injector Nozzles":"Iron","Containment Matrix":"Laranite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Echo","family":"Quantum Drive","size":"S3","class":"Civilian","grade":"D","manufacturer":"ArcCorp","url":"https://api.star-citizen.wiki/items/echo","recipe":{"Case":"Tin","Injector Nozzles":"Iron","Containment Matrix":"Corundum"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Fissure","family":"Quantum Drive","size":"S3","class":"Civilian","grade":"C","manufacturer":"ArcCorp","url":"https://api.star-citizen.wiki/items/fissure","recipe":{"Case":"Tin","Injector Nozzles":"Iron","Containment Matrix":"Hephaestanite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Impulse","family":"Quantum Drive","size":"S3","class":"Civilian","grade":"B","manufacturer":"ArcCorp","url":"https://api.star-citizen.wiki/items/impulse","recipe":{"Case":"Iron","Injector Nozzles":"Iron","Containment Matrix":"Laranite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Wayfare","family":"Quantum Drive","size":"S1","class":"Civilian","grade":"D","manufacturer":"Tarsus","url":"https://api.star-citizen.wiki/items/wayfare","recipe":{"Case":"Tin","Injector Nozzles":"Iron","Containment Matrix":"Corundum"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Expedition","family":"Quantum Drive","size":"S1","class":"Civilian","grade":"C","manufacturer":"Tarsus","url":"https://api.star-citizen.wiki/items/expedition","recipe":{"Case":"Tin","Injector Nozzles":"Iron","Containment Matrix":"Hephaestanite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Voyage","family":"Quantum Drive","size":"S1","class":"Civilian","grade":"B","manufacturer":"Tarsus","url":"https://api.star-citizen.wiki/items/voyage","recipe":{"Case":"Iron","Injector Nozzles":"Iron","Containment Matrix":"Laranite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Quest","family":"Quantum Drive","size":"S2","class":"Civilian","grade":"D","manufacturer":"Tarsus","url":"https://api.star-citizen.wiki/items/quest","recipe":{"Case":"Tin","Injector Nozzles":"Iron","Containment Matrix":"Corundum"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Odyssey","family":"Quantum Drive","size":"S2","class":"Civilian","grade":"C","manufacturer":"Tarsus","url":"https://api.star-citizen.wiki/items/odyssey","recipe":{"Case":"Tin","Injector Nozzles":"Iron","Containment Matrix":"Hephaestanite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Sojourn","family":"Quantum Drive","size":"S2","class":"Civilian","grade":"B","manufacturer":"Tarsus","url":"https://api.star-citizen.wiki/items/sojourn","recipe":{"Case":"Iron","Injector Nozzles":"Iron","Containment Matrix":"Laranite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Drifter","family":"Quantum Drive","size":"S3","class":"Civilian","grade":"D","manufacturer":"Tarsus","url":"https://api.star-citizen.wiki/items/drifter","recipe":{"Case":"Tin","Injector Nozzles":"Iron","Containment Matrix":"Corundum"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Wanderer","family":"Quantum Drive","size":"S3","class":"Civilian","grade":"C","manufacturer":"Tarsus","url":"https://api.star-citizen.wiki/items/wanderer","recipe":{"Case":"Tin","Injector Nozzles":"Iron","Containment Matrix":"Hephaestanite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Ranger","family":"Quantum Drive","size":"S3","class":"Civilian","grade":"B","manufacturer":"Tarsus","url":"https://api.star-citizen.wiki/items/ranger","recipe":{"Case":"Iron","Injector Nozzles":"Iron","Containment Matrix":"Laranite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Vulcan","family":"Quantum Drive","size":"S1","class":"Industrial","grade":"D","manufacturer":"Juno Starwerk","url":"https://api.star-citizen.wiki/items/vulcan","recipe":{"Case":"Iron","Injector Nozzles":"Iron","Containment Matrix":"Laranite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Goliath","family":"Quantum Drive","size":"S1","class":"Industrial","grade":"C","manufacturer":"Juno Starwerk","url":"https://api.star-citizen.wiki/items/goliath","recipe":{"Case":"Tungsten","Injector Nozzles":"Tungsten","Containment Matrix":"Laranite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Colossus","family":"Quantum Drive","size":"S1","class":"Industrial","grade":"B","manufacturer":"Juno Starwerk","url":"https://api.star-citizen.wiki/items/colossus","recipe":{"Case":"Agricium","Injector Nozzles":"Tungsten","Containment Matrix":"Beryl"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Yaluk","family":"Quantum Drive","size":"S2","class":"Industrial","grade":"D","manufacturer":"Juno Starwerk","url":"https://api.star-citizen.wiki/items/yaluk","recipe":{"Case":"Iron","Injector Nozzles":"Iron","Containment Matrix":"Laranite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Bolon","family":"Quantum Drive","size":"S2","class":"Industrial","grade":"C","manufacturer":"Juno Starwerk","url":"https://api.star-citizen.wiki/items/bolon","recipe":{"Case":"Tungsten","Injector Nozzles":"Tungsten","Containment Matrix":"Laranite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Huracan","family":"Quantum Drive","size":"S2","class":"Industrial","grade":"B","manufacturer":"Juno Starwerk","url":"https://api.star-citizen.wiki/items/huracan","recipe":{"Case":"Agricium","Injector Nozzles":"Tungsten","Containment Matrix":"Beryl"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Vesta","family":"Quantum Drive","size":"S3","class":"Industrial","grade":"D","manufacturer":"Juno Starwerk","url":"https://api.star-citizen.wiki/items/vesta","recipe":{"Case":"Iron","Injector Nozzles":"Iron","Containment Matrix":"Laranite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Kama","family":"Quantum Drive","size":"S3","class":"Industrial","grade":"C","manufacturer":"Juno Starwerk","url":"https://api.star-citizen.wiki/items/kama","recipe":{"Case":"Tungsten","Injector Nozzles":"Tungsten","Containment Matrix":"Laranite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Agni","family":"Quantum Drive","size":"S3","class":"Industrial","grade":"B","manufacturer":"Juno Starwerk","url":"https://api.star-citizen.wiki/items/agni","recipe":{"Case":"Agricium","Injector Nozzles":"Tungsten","Containment Matrix":"Beryl"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Beacon","family":"Quantum Drive","size":"S1","class":"Military","grade":"C","manufacturer":"Wei-Tek","url":"https://api.star-citizen.wiki/items/beacon","recipe":{"Case":"Titanium","Injector Nozzles":"Tungsten","Containment Matrix":"Beryl"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Siren","family":"Quantum Drive","size":"S1","class":"Military","grade":"B","manufacturer":"Wei-Tek","url":"https://api.star-citizen.wiki/items/siren","recipe":{"Case":"Borase","Injector Nozzles":"Tungsten","Containment Matrix":"Ouratite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"VK-00","family":"Quantum Drive","size":"S1","class":"Military","grade":"A","manufacturer":"Wei-Tek","url":"https://api.star-citizen.wiki/items/vk-00","recipe":{"Case":"Borase","Injector Nozzles":"Tungsten","Containment Matrix":"Stileron"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Crossfield","family":"Quantum Drive","size":"S2","class":"Military","grade":"C","manufacturer":"Wei-Tek","url":"https://api.star-citizen.wiki/items/crossfield","recipe":{"Case":"Titanium","Injector Nozzles":"Tungsten","Containment Matrix":"Beryl"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Yeager","family":"Quantum Drive","size":"S2","class":"Military","grade":"B","manufacturer":"Wei-Tek","url":"https://api.star-citizen.wiki/items/yeager","recipe":{"Case":"Borase","Injector Nozzles":"Tungsten","Containment Matrix":"Ouratite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"XL-1","family":"Quantum Drive","size":"S2","class":"Military","grade":"A","manufacturer":"Wei-Tek","url":"https://api.star-citizen.wiki/items/xl-1","recipe":{"Case":"Borase","Injector Nozzles":"Tungsten","Containment Matrix":"Stileron"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Pontes","family":"Quantum Drive","size":"S3","class":"Military","grade":"C","manufacturer":"Wei-Tek","url":"https://api.star-citizen.wiki/items/pontes","recipe":{"Case":"Titanium","Injector Nozzles":"Tungsten","Containment Matrix":"Beryl"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Balandin","family":"Quantum Drive","size":"S3","class":"Military","grade":"B","manufacturer":"Wei-Tek","url":"https://api.star-citizen.wiki/items/balandin","recipe":{"Case":"Borase","Injector Nozzles":"Tungsten","Containment Matrix":"Ouratite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"TS-2","family":"Quantum Drive","size":"S3","class":"Military","grade":"A","manufacturer":"Wei-Tek","url":"https://api.star-citizen.wiki/items/ts-2","recipe":{"Case":"Borase","Injector Nozzles":"Tungsten","Containment Matrix":"Stileron"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Drift","family":"Quantum Drive","size":"S1","class":"Stealth","grade":"C","manufacturer":"RAMP Corporation","url":"https://api.star-citizen.wiki/items/drift","recipe":{"Case":"Agricium","Injector Nozzles":"Tungsten","Containment Matrix":"Bexalite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Zephyr","family":"Quantum Drive","size":"S1","class":"Stealth","grade":"B","manufacturer":"RAMP Corporation","url":"https://api.star-citizen.wiki/items/zephyr","recipe":{"Case":"Tungsten","Injector Nozzles":"Tungsten","Containment Matrix":"Ouratite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Spectre","family":"Quantum Drive","size":"S1","class":"Stealth","grade":"A","manufacturer":"RAMP Corporation","url":"https://api.star-citizen.wiki/items/spectre","recipe":{"Case":"Borase","Injector Nozzles":"Tungsten","Containment Matrix":"Savrilium"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Nova","family":"Quantum Drive","size":"S2","class":"Stealth","grade":"C","manufacturer":"RAMP Corporation","url":"https://api.star-citizen.wiki/items/nova","recipe":{"Case":"Agricium","Injector Nozzles":"Tungsten","Containment Matrix":"Bexalite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Bolt","family":"Quantum Drive","size":"S2","class":"Stealth","grade":"B","manufacturer":"RAMP Corporation","url":"https://api.star-citizen.wiki/items/bolt","recipe":{"Case":"Tungsten","Injector Nozzles":"Tungsten","Containment Matrix":"Ouratite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Spicule","family":"Quantum Drive","size":"S2","class":"Stealth","grade":"A","manufacturer":"RAMP Corporation","url":"https://api.star-citizen.wiki/items/spicule","recipe":{"Case":"Borase","Injector Nozzles":"Tungsten","Containment Matrix":"Savrilium"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"LightFire","family":"Quantum Drive","size":"S1","class":"Competition","grade":"C","manufacturer":"Ace Astrogation","url":"https://api.star-citizen.wiki/items/lightfire","recipe":{"Case":"Iron","Injector Nozzles":"Iron","Containment Matrix":"Laranite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"FoxFire","family":"Quantum Drive","size":"S1","class":"Competition","grade":"B","manufacturer":"Ace Astrogation","url":"https://api.star-citizen.wiki/items/foxfire","recipe":{"Case":"Torite","Injector Nozzles":"Tungsten","Containment Matrix":"Beryl"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"SparkFire","family":"Quantum Drive","size":"S2","class":"Competition","grade":"C","manufacturer":"Ace Astrogation","url":"https://api.star-citizen.wiki/items/sparkfire","recipe":{"Case":"Iron","Injector Nozzles":"Iron","Containment Matrix":"Laranite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"SunFire","family":"Quantum Drive","size":"S2","class":"Competition","grade":"B","manufacturer":"Ace Astrogation","url":"https://api.star-citizen.wiki/items/sunfire","recipe":{"Case":"Torite","Injector Nozzles":"Tungsten","Containment Matrix":"Beryl"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit"},{"name":"Allegro","family":"Quantum Drive","size":"S4","class":"Civilian","grade":"Bespoke","manufacturer":"ArcCorp","url":"https://api.star-citizen.wiki/items/allegro","recipe":{"Case":"Torite","Injector Nozzles":"Tungsten","Containment Matrix":"Bexalite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit","gradeNote":"890 Jump-specific S4 blueprint. Fitment may display A; Description Data identifies the grade as Bespoke. Current LIVE blueprint reward pool is empty.","sourceFile":"bp_craft_qdrv_orig_s04_890j_scitem.json"},{"name":"Frontline","family":"Quantum Drive","size":"S4","class":"","grade":"A","manufacturer":"Aegis Dynamics","url":"https://api.star-citizen.wiki/items/frontline","recipe":{"Case":"Borase","Injector Nozzles":"Tungsten","Containment Matrix":"Stileron"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified-live-blueprint-audit","gradeNote":"Idris-specific S4 blueprint. The current LIVE source file is named *_TEMP and its reward pool is empty.","sourceFile":"bp_craft_qdrv_wetk_s04_idris_temp.json"},{"name":"V801-11","family":"Radar","size":"S1","class":"Military","grade":"A","manufacturer":"Wei-Tek","url":"https://api.star-citizen.wiki/items/v801-11","recipe":{"Case":"Borase","Transmitter":"Bexalite","Signal Processor":"Stileron"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"V801-12","family":"Radar","size":"S2","class":"Military","grade":"A","manufacturer":"Wei-Tek","url":"https://api.star-citizen.wiki/items/v801-12","recipe":{"Case":"Borase","Transmitter":"Bexalite","Signal Processor":"Stileron"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Arbor MHV Mining Laser","family":"Mining Laser","size":"S0","class":"Mining","grade":"A","manufacturer":"Greycat Industrial","url":"https://api.star-citizen.wiki/items/arbor-mhv-mining-laser","recipe":{"Frame":"Iron","Emitter":"Sadaryx","Bus Bars":"Copper"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Arbor MH1 Mining Laser","family":"Mining Laser","size":"S1","class":"Mining","grade":"A","manufacturer":"Greycat Industrial","url":"https://api.star-citizen.wiki/items/arbor-mh1-mining-laser","recipe":{"Frame":"Iron","Emitter":"Sadaryx","Bus Bars":"Copper"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Arbor MH2 Mining Laser","family":"Mining Laser","size":"S2","class":"Mining","grade":"A","manufacturer":"Greycat Industrial","url":"https://api.star-citizen.wiki/items/arbor-mh2-mining-laser","recipe":{"Frame":"Iron","Emitter":"Sadaryx","Bus Bars":"Copper"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"S00 Hofstede","family":"Mining Laser","size":"S0","class":"Mining","grade":"A","manufacturer":"Shubin Interstellar","url":"https://api.star-citizen.wiki/items/s00-hofstede","recipe":{"Frame":"Iron","Emitter":"Sadaryx","Bus Bars":"Copper"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified","gradeNote":"Az API felső Fitment mezője A, a Description Data egyes verziókban B-t jelez."},{"name":"Hofstede-S1 Mining Laser","family":"Mining Laser","size":"S1","class":"Mining","grade":"A","manufacturer":"Shubin Interstellar","url":"https://api.star-citizen.wiki/items/hofstede-s1-mining-laser","recipe":{"Frame":"Iron","Emitter":"Sadaryx","Bus Bars":"Copper"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Hofstede-S2 Mining Laser","family":"Mining Laser","size":"S2","class":"Mining","grade":"A","manufacturer":"Shubin Interstellar","url":"https://api.star-citizen.wiki/items/hofstede-s2-mining-laser","recipe":{"Frame":"Iron","Emitter":"Sadaryx","Bus Bars":"Copper"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Impact I Mining Laser","family":"Mining Laser","size":"S1","class":"Mining","grade":"A","manufacturer":"Thermyte Concern","url":"https://api.star-citizen.wiki/items/impact-i-mining-laser","recipe":{"Frame":"Iron","Emitter":"Sadaryx","Bus Bars":"Copper"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Impact II Mining Laser","family":"Mining Laser","size":"S2","class":"Mining","grade":"A","manufacturer":"Thermyte Concern","url":"https://api.star-citizen.wiki/items/30545178-b09e-495d-a8b8-c6267ce2b495","recipe":{"Frame":"Iron","Emitter":"Sadaryx","Bus Bars":"Copper"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Klein-S1 Mining Laser","family":"Mining Laser","size":"S1","class":"Mining","grade":"A","manufacturer":"Shubin Interstellar","url":"https://api.star-citizen.wiki/items/klein-s1-mining-laser","recipe":{"Frame":"Iron","Emitter":"Sadaryx","Bus Bars":"Copper"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Klein-S2 Mining Laser","family":"Mining Laser","size":"S2","class":"Mining","grade":"A","manufacturer":"Shubin Interstellar","url":"https://api.star-citizen.wiki/items/klein-s2-mining-laser","recipe":{"Frame":"Iron","Emitter":"Sadaryx","Bus Bars":"Copper"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Lancet MH1 Mining Laser","family":"Mining Laser","size":"S1","class":"Mining","grade":"A","manufacturer":"Greycat Industrial","url":"https://api.star-citizen.wiki/items/lancet-mh1-mining-laser","recipe":{"Frame":"Iron","Emitter":"Sadaryx","Bus Bars":"Copper"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Lancet MH2 Mining Laser","family":"Mining Laser","size":"S2","class":"Mining","grade":"A","manufacturer":"Greycat Industrial","url":"https://api.star-citizen.wiki/items/c2006c91-f8f7-4bda-ae38-e0ca5af5c737","recipe":{"Frame":"Iron","Emitter":"Sadaryx","Bus Bars":"Copper"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Lawson Mining Laser","family":"Mining Laser","size":"S0","class":"Mining","grade":"A","manufacturer":"Argo Astronautics","url":"https://api.star-citizen.wiki/items/lawson-mining-laser","recipe":{"Frame":"Iron","Emitter":"Sadaryx","Bus Bars":"Copper"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified","gradeNote":"Az API felső Fitment mezője A, a Description Data C-t jelez."},{"name":"Pitman Mining Laser","family":"Mining Laser","size":"S1","class":"Mining","grade":"A","manufacturer":"Drake Interplanetary","url":"https://api.star-citizen.wiki/items/pitman-mining-laser","recipe":{"Frame":"Iron","Emitter":"Sadaryx","Bus Bars":"Copper"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"S0 Helix","family":"Mining Laser","size":"S0","class":"Mining","grade":"A","manufacturer":"Thermyte Concern","url":"https://api.star-citizen.wiki/items/s0-helix","recipe":{"Frame":"Iron","Emitter":"Sadaryx","Bus Bars":"Copper"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified","gradeNote":"Az API felső Fitment mezője A, a Description Data B-t jelez."},{"name":"Helix I Mining Laser","family":"Mining Laser","size":"S1","class":"Mining","grade":"A","manufacturer":"Thermyte Concern","url":"https://api.star-citizen.wiki/items/helix-i-mining-laser","recipe":{"Frame":"Iron","Emitter":"Sadaryx","Bus Bars":"Copper"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Helix II Mining Laser","family":"Mining Laser","size":"S2","class":"Mining","grade":"A","manufacturer":"Thermyte Concern","url":"https://api.star-citizen.wiki/items/helix-ii-mining-laser","recipe":{"Frame":"Iron","Emitter":"Sadaryx","Bus Bars":"Copper"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"Stampede Module","family":"Mining Module","size":"S1","class":"Active","grade":"—","manufacturer":"Thermyte Concern","url":"https://api.star-citizen.wiki/items/stampede-module","recipe":{"Case":"Iron","Wiring":"Copper"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified","qualityBucket":"low","tags":["Stampede"]},{"name":"Torrent III Module","family":"Mining Module","size":"S1","class":"Passive","grade":"—","manufacturer":"Thermyte Concern","url":"https://api.star-citizen.wiki/items/torrent-iii-module","recipe":{"Case":"Iron","Wiring":"Copper"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified","qualityBucket":"low","tags":["Torrent III"]},{"name":"Clearcut Module","family":"Mining Module","size":"S1","class":"Active","grade":"—","manufacturer":"Musashi Industrial & Starflight Concern","url":"https://api.star-citizen.wiki/items/clearcut-module","recipe":{"Case":"Iron","Wiring":"Copper"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified","qualityBucket":"high","tags":["Clearcut"]},{"name":"Deluge Module","family":"Mining Module","size":"S1","class":"Passive","grade":"—","manufacturer":"Musashi Industrial & Starflight Concern","url":"https://api.star-citizen.wiki/items/deluge-module","recipe":{"Case":"Iron","Wiring":"Copper"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified","qualityBucket":"high","tags":["Deluge"]},{"name":"Overrun Module","family":"Mining Module","size":"S1","class":"Passive","grade":"—","manufacturer":"Musashi Industrial & Starflight Concern","url":"https://api.star-citizen.wiki/items/overrun-module","recipe":{"Case":"Iron","Wiring":"Copper"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified","qualityBucket":"high","tags":["Overrun"]},{"name":"Argo Ore Pod","family":"Ore Pod","size":"S1","class":"Cargo","grade":"A","manufacturer":"Argo Astronautics","url":"https://api.star-citizen.wiki/items/argo-ore-pod","recipe":{"Frame":"Iron"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified","qualityBucket":"low","tags":["Argo"]},{"name":"Drake Ore Pod","family":"Ore Pod","size":"S1","class":"Cargo","grade":"A","manufacturer":"Drake Interplanetary","url":"https://api.star-citizen.wiki/items/drake-ore-pod","recipe":{"Frame":"Iron"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified","qualityBucket":"low","tags":["Drake"]},{"name":"MISC Ore Pod","family":"Ore Pod","size":"S1","class":"Cargo","grade":"A","manufacturer":"Musashi Industrial & Starflight Concern","url":"https://api.star-citizen.wiki/items/ca23670c-f690-4027-af9a-a5d6dda74c79","recipe":{"Frame":"Iron"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified","qualityBucket":"low","tags":["MISC standard","MISC Ore Pod"]},{"name":"GOLEM MC-4 Ore Pod","family":"Ore Pod","size":"S1","class":"Cargo","grade":"—","manufacturer":"Drake Interplanetary","url":null,"recipe":{"Frame":"Iron"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"recipe-verified-link-pending","qualityBucket":"high","tags":["GOLEM MC-4"]},{"name":"MISC Enhanced Ore Pod","family":"Ore Pod","size":"S1","class":"Cargo","grade":"—","manufacturer":"Musashi Industrial & Starflight Concern","url":null,"recipe":{"Frame":"Iron"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"recipe-verified-link-pending","qualityBucket":"high","tags":["MISC Enhanced"]},{"name":"Sledge I Mass Driver Cannon","family":"Ship Weapon","size":"S1","class":"Mass Driver","grade":"A","manufacturer":"Klaus & Werner","url":"https://api.star-citizen.wiki/items/sledge-i-mass-driver-cannon","recipe":{"Frame":"Titanium","Wiring":"Copper","Magnetizer":"Saldynium (Ore)"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Sledge II Mass Driver Cannon","family":"Ship Weapon","size":"S2","class":"Mass Driver","grade":"A","manufacturer":"Klaus & Werner","url":"https://api.star-citizen.wiki/items/sledge-ii-mass-driver-cannon","recipe":{"Frame":"Titanium","Wiring":"Copper","Magnetizer":"Saldynium (Ore)"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Sledge III Mass Driver Cannon","family":"Ship Weapon","size":"S3","class":"Mass Driver","grade":"A","manufacturer":"Klaus & Werner","url":"https://api.star-citizen.wiki/items/sledge-iii-mass-driver-cannon","recipe":{"Frame":"Titanium","Wiring":"Copper","Magnetizer":"Saldynium (Ore)"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"Strife Mass Driver Cannon","family":"Ship Weapon","size":"S2","class":"Mass Driver","grade":"A","manufacturer":"Apocalypse Arms","url":"https://api.star-citizen.wiki/items/strife-mass-driver-cannon","recipe":{"Frame":"Titanium","Wiring":"Copper","Magnetizer":"Saldynium (Ore)"},"sourceVersion":"4.9.0-LIVE.12232306","verification":"verified"},{"name":"FullForce","family":"Power Plant","size":"S2","class":"Civilian","grade":"C","manufacturer":"Lightning Power Ltd.","url":"https://api.star-citizen.wiki/items/fullforce","recipe":{"Shell":"Iron","Voltage Regulator":"Silicon","Stator Cores":"Silicon"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"Sedulity","family":"Power Plant","size":"S2","class":"Industrial","grade":"B","manufacturer":"Juno Starwerk","url":"https://api.star-citizen.wiki/items/sedulity","recipe":{"Shell":"Borase","Voltage Regulator":"Laranite","Stator Cores":"Taranite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"Durango","family":"Power Plant","size":"S3","class":"Industrial","grade":"A","manufacturer":"Juno Starwerk","url":"https://api.star-citizen.wiki/items/durango","recipe":{"Shell":"Riccite","Voltage Regulator":"Laranite","Stator Cores":"Riccite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"StarBurn","family":"Power Plant","size":"S2","class":"Competition","grade":"B","manufacturer":"ACOM","url":"https://api.star-citizen.wiki/items/starburn","recipe":{"Shell":"Torite","Voltage Regulator":"Laranite","Stator Cores":"Laranite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"Chill-Max","family":"Cooler","size":"S3","class":"Industrial","grade":"A","manufacturer":"Juno Starwerk","url":"https://api.star-citizen.wiki/items/chill-max","recipe":{"Shell":"Riccite","Coolant":"Pressurized Ice","Pump Impeller":"Titanium"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"CoolCore","family":"Cooler","size":"S2","class":"Industrial","grade":"C","manufacturer":"Juno Starwerk","url":"https://api.star-citizen.wiki/items/coolcore","recipe":{"Shell":"Tungsten","Coolant":"Pressurized Ice","Pump Impeller":"Agricium"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"Hydrocel","family":"Cooler","size":"S1","class":"Industrial","grade":"D","manufacturer":"Juno Starwerk","url":"https://api.star-citizen.wiki/items/a5107834-61e1-481d-b836-7ed6c08b14d5","recipe":{"Shell":"Torite","Coolant":"Pressurized Ice","Pump Impeller":"Iron"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"Serac","family":"Cooler","size":"S4","class":"Civilian","grade":"Bespoke","manufacturer":"Wen/Cassel","url":"https://api.star-citizen.wiki/items/serac","recipe":{"Shell":"Borase","Coolant":"Pressurized Ice","Pump Impeller":"Tungsten"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"Shroud","family":"Shield Generator","size":"S2","class":"Stealth","grade":"D","manufacturer":"Ascension Astro","url":"https://api.star-citizen.wiki/items/shroud","recipe":{"Shell":"Agricium","Field Array":"Laranite","Frequency Controller":"Glacosite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"Citadel","family":"Shield Generator","size":"S2","class":"Industrial","grade":"B","manufacturer":"Basilisk","url":"https://api.star-citizen.wiki/items/citadel","recipe":{"Shell":"Borase","Field Array":"Gold","Frequency Controller":"Beradom"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"Veil","family":"Shield Generator","size":"S1","class":"Stealth","grade":"B","manufacturer":"Ascension Astro","url":"https://api.star-citizen.wiki/items/veil","recipe":{"Shell":"Riccite","Field Array":"Riccite","Frequency Controller":"Beradom"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"INK","family":"Shield Generator","size":"S1","class":"Civilian","grade":"D","manufacturer":"Seal Corporation","url":"https://api.star-citizen.wiki/items/ink","recipe":{"Shell":"Tin","Field Array":"Corundum","Frequency Controller":"Glacosite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"SecureHyde","family":"Shield Generator","size":"S1","class":"Military","grade":"D","manufacturer":"Gorgon Defender Industries","url":"https://api.star-citizen.wiki/items/securehyde","recipe":{"Shell":"Titanium","Field Array":"Laranite","Frequency Controller":"Beradom"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"HEX","family":"Shield Generator","size":"S1","class":"Civilian","grade":"B","manufacturer":"Seal Corporation","url":"https://api.star-citizen.wiki/items/hex","recipe":{"Shell":"Torite","Field Array":"Laranite","Frequency Controller":"Glacosite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"Targa","family":"Shield Generator","size":"S1","class":"Competition","grade":"C","manufacturer":"Yorm","url":"https://api.star-citizen.wiki/items/targa","recipe":{"Shell":"Tungsten","Field Array":"Laranite","Frequency Controller":"Glacosite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"BroadSpec-Go","family":"Radar","size":"S0","class":"Industrial","grade":"B","manufacturer":"Chimera Communications","url":"https://api.star-citizen.wiki/items/broadspec-go","recipe":{"Case":"Agricium","Transmitter":"Laranite","Signal Processor":"Gold"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"FullSpec","family":"Radar","size":"S2","class":"Industrial","grade":"A","manufacturer":"Chimera Communications","url":"https://api.star-citizen.wiki/items/fullspec","recipe":{"Case":"Titanium","Transmitter":"Laranite","Signal Processor":"Riccite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"Chernykh","family":"Radar","size":"S2","class":"Civilian","grade":"C","manufacturer":"WillsOp","url":"https://api.star-citizen.wiki/items/chernykh","recipe":{"Case":"Tin","Transmitter":"Quartz","Signal Processor":"Silicon"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"SNS-R7x","family":"Radar","size":"S2","class":"Competition","grade":"B","manufacturer":"Nav-E7 Gadgets","url":"https://api.star-citizen.wiki/items/sns-r7x","recipe":{"Case":"Torite","Transmitter":"Laranite","Signal Processor":"Agricium"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"Sens","family":"Radar","size":"S0","class":"Military","grade":"B","manufacturer":"Groupe Nouveau Paradigme","url":"https://api.star-citizen.wiki/items/sens","recipe":{"Case":"Borase","Transmitter":"Bexalite","Signal Processor":"Lindinium"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"Prophet","family":"Radar","size":"S1","class":"Stealth","grade":"A","manufacturer":"Blue Triangle Inc.","url":"https://api.star-citizen.wiki/items/prophet","recipe":{"Case":"Borase","Transmitter":"Bexalite","Signal Processor":"Savrilium"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"M5A Cannon","family":"Ship Weapon","size":"S3","class":"Laser Cannon","grade":"A","manufacturer":"Behring Applied Technology","url":"https://api.star-citizen.wiki/items/m5a-cannon","recipe":{"Frame":"Agricium","Emitter":"Hadanite","Aperture Iris":"Dolivine"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"Revenant Gatling","family":"Ship Weapon","size":"S4","class":"Ballistic Gatling","grade":"A","manufacturer":"Apocalypse Arms","url":"https://api.star-citizen.wiki/items/revenant-gatling-2","recipe":{"Frame":"Iron","Drive Motor":"Ouratite","Barrels":"Tungsten"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"BRVS Repeater","family":"Ship Weapon","size":"S2","class":"Ballistic Repeater","grade":"A","manufacturer":"Behring Applied Technology","url":"https://api.star-citizen.wiki/items/brvs-repeater","recipe":{"Reinforced Frame":"Borase","Cycler":"Riccite","Barrel":"Titanium"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"DR Model-XJ3 Repeater","family":"Ship Weapon","size":"S3","class":"Distortion Repeater","grade":"A","manufacturer":"Associated Science & Development","url":"https://api.star-citizen.wiki/items/2a787ee5-d720-4490-8823-65a0f8578f4b","recipe":{"Reinforced Frame":"Tungsten","Radiator":"Torite","Distorter Unit":"Aphorite"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"NDB-28 Repeater","family":"Ship Weapon","size":"S2","class":"Neutron Repeater","grade":"A","manufacturer":"MaxOx","url":"https://api.star-citizen.wiki/items/ndb-28-repeater","recipe":{"Reinforced Frame":"Titanium","Wiring":"Gold","Radiator":"Lindinium"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"PyroBurst Scattergun","family":"Ship Weapon","size":"S3","class":"Plasma Scattergun","grade":"A","manufacturer":"Amon & Reese Co.","url":"https://api.star-citizen.wiki/items/aa41e4d8-6b99-4f63-90d5-b0956e70c1d8","recipe":{"Frame":"Titanium","Electronics":"Gold","Torque Junction":"Savrilium"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"},{"name":"Singe Cannon (S2)","family":"Ship Weapon","size":"S2","class":"Tachyon Cannon","grade":"A","manufacturer":"Banu Souli","url":"https://api.star-citizen.wiki/items/40b94722-48be-406a-9843-5c77772e4ab4","recipe":{"Frame":"Tungsten","Wiring":"Copper","Acceleration Unit":"Quantainium"},"sourceVersion":"4.10.0-LIVE.12519617","verification":"verified"}];
+
+// Ship Weapon registry enrichment — current StarCitizenWiki 4.10 LIVE source.
+// V25 layout/CSS is intentionally untouched. 96 craftable WeaponGun blueprint files,
+// every listed S1-S6 blueprint is loaded from the pinned StarCitizenWiki game-data snapshot.
+const SHIP_WEAPON_DATA_VERSION = "4.10.0-LIVE.12519617";
+const SHIP_WEAPON_DATA_COMMIT = "f6a2b29e77aaa2c824aa4fd1c0478c8058c69fca";
+const SHIP_WEAPON_BLUEPRINT_FILES = ["bp_craft_klwe_massdriver_s1.json","bp_craft_amrs_lasercannon_s1.json","bp_craft_behr_lasercannon_s1.json","bp_craft_kron_lasercannon_s1.json","bp_craft_espr_lasercannon_s1.json","bp_craft_mxox_neutroncannon_s1.json","bp_craft_banu_tachyoncannon_s1.json","bp_craft_klwe_laserrepeater_s1.json","bp_craft_hrst_laserrepeater_s1.json","bp_craft_espr_ballisticcannon_s1.json","bp_craft_gats_ballisticcannon_s1.json","bp_craft_kbar_ballisticcannon_s1.json","bp_craft_mxox_neutronrepeater_s1.json","bp_craft_hrst_laserscattergun_s1.json","bp_craft_gats_ballisticgatling_s1.json","bp_craft_jokr_distortioncannon_s1.json","bp_craft_behr_ballisticrepeater_s1.json","bp_craft_asad_distortionrepeater_s1.json","bp_craft_apar_ballisticscattergun_s1.json","bp_craft_klwe_laserrepeater_s1_mr01.json","bp_hrst_laserscattergun_s2.json","bp_craft_apar_massdriver_s2.json","bp_craft_klwe_massdriver_s2.json","bp_craft_amrs_lasercannon_s2.json","bp_craft_toag_lasergatling_s2.json","bp_craft_behr_lasercannon_s2.json","bp_craft_kron_lasercannon_s2.json","bp_craft_espr_lasercannon_s2.json","bp_craft_mxox_neutroncannon_s2.json","bp_craft_banu_tachyoncannon_s2.json","bp_craft_klwe_laserrepeater_s2.json","bp_craft_hrst_laserrepeater_s2.json","bp_craft_behr_lasercannon_vng_s2.json","bp_craft_espr_ballisticcannon_s2.json","bp_craft_gats_ballisticcannon_s2.json","bp_craft_kbar_ballisticcannon_s2.json","bp_craft_mxox_neutronrepeater_s2.json","bp_craft_gats_ballisticgatling_s2.json","bp_craft_krig_ballisticgatling_s2.json","bp_craft_jokr_distortioncannon_s2.json","bp_craft_behr_laserrepeater_vng_s2.json","bp_craft_behr_ballisticrepeater_s2.json","bp_craft_behr_ballisticcannon_vng_s2.json","bp_craft_asad_distortionrepeater_s2.json","bp_craft_apar_ballisticscattergun_s2.json","bp_craft_klwe_laserrepeater_s2_mr01.json","bp_craft_behr_distortioncannon_vng_s2.json","bp_craft_behr_ballisticrepeater_vng_s2.json","bp_craft_behr_distortionrepeater_vng_s2.json","bp_craft_amrs_scattergun_s3.json","bp_craft_klwe_massdriver_s3.json","bp_craft_amrs_lasercannon_s3.json","bp_craft_behr_lasercannon_s3.json","bp_craft_kron_lasercannon_s3.json","bp_craft_krig_lasercannon_s3.json","bp_craft_espr_lasercannon_s3.json","bp_craft_mxox_neutroncannon_s3.json","bp_craft_banu_tachyoncannon_s3.json","bp_craft_klwe_laserrepeater_s3.json","bp_craft_hrst_laserrepeater_s3.json","bp_craft_espr_ballisticcannon_s3.json","bp_craft_gats_ballisticcannon_s3.json","bp_craft_kbar_ballisticcannon_s3.json","bp_craft_mxox_neutronrepeater_s3.json","bp_craft_hrst_laserscattergun_s3.json","bp_craft_gats_ballisticgatling_s3.json","bp_craft_jokr_distortioncannon_s3.json","bp_craft_behr_ballisticrepeater_s3.json","bp_craft_asad_distortionrepeater_s3.json","bp_craft_apar_ballisticscattergun_s3.json","bp_craft_hrst_storm_laserrepeater_s3.json","bp_craft_klwe_laserrepeater_s3_mr01.json","bp_craft_amrs_lasercannon_s4.json","bp_craft_behr_lasercannon_s4.json","bp_craft_espr_lasercannon_s4.json","bp_craft_klwe_laserrepeater_s4.json","bp_craft_hrst_laserrepeater_s4.json","bp_craft_espr_ballisticcannon_s4.json","bp_craft_behr_ballisticcannon_s4.json","bp_craft_behr_ballisticgatling_s4.json","bp_craft_apar_ballisticgatling_s4.json","bp_craft_amrs_lasercannon_s5.json","bp_craft_behr_lasercannon_s5.json","bp_craft_espr_lasercannon_s5.json","bp_craft_hrst_laserrepeater_s5.json","bp_craft_klwe_laserrepeater_s5.json","bp_craft_espr_ballisticcannon_s5.json","bp_craft_behr_ballisticgatling_s5.json","bp_craft_amrs_lasercannon_s6.json","bp_craft_behr_lasercannon_s6.json","bp_craft_espr_lasercannon_s6.json","bp_craft_klwe_laserrepeater_s6.json","bp_craft_hrst_laserrepeater_s6.json","bp_craft_espr_ballisticcannon_s6.json","bp_craft_apar_ballisticgatling_s6.json","bp_craft_behr_ballisticgatling_s6.json"];
+let shipWeaponRegistryLoadPromise = null;
+let shipWeaponRegistryLoaded = false;
+
+function shipWeaponClassLabel(file){
+  const f=String(file||"").toLowerCase();
+  const types=[
+    ["ballisticscattergun","Ballistic Scattergun"],
+    ["laserscattergun","Laser Scattergun"],
+    ["distortionrepeater","Distortion Repeater"],
+    ["distortioncannon","Distortion Cannon"],
+    ["ballisticrepeater","Ballistic Repeater"],
+    ["ballisticgatling","Ballistic Gatling"],
+    ["ballisticcannon","Ballistic Cannon"],
+    ["neutronrepeater","Neutron Repeater"],
+    ["neutroncannon","Neutron Cannon"],
+    ["tachyoncannon","Tachyon Cannon"],
+    ["laserrepeater","Laser Repeater"],
+    ["lasergatling","Laser Gatling"],
+    ["lasercannon","Laser Cannon"],
+    ["massdriver","Mass Driver"],
+    ["scattergun","Scattergun"]
+  ];
+  const hit=types.find(([k])=>f.includes(k));
+  return hit?hit[1]:"Ship Weapon";
+}
+function shipWeaponSize(out,file){
+  const raw=`${out?.Class||out?.class||""} ${file||""}`;
+  const m=raw.match(/_s0?(\d+)(?:_|\.|$)/i);
+  return m?`S${Number(m[1])}`:"";
+}
+function shipWeaponRecipeFromBlueprint(bp){
+  const groups=bp?.Tiers?.[0]?.Requirements?.Children||[];
+  const recipe={};
+  for(const g of groups){
+    const slot=String(g?.Name||g?.Key||"").trim();
+    if(!slot) continue;
+    const names=(g?.Children||[]).map(x=>String(x?.Name||"").trim()).filter(Boolean);
+    if(!names.length) continue;
+    recipe[slot]=names.length===1?names[0]:[...new Set(names)];
+  }
+  return recipe;
+}
+function shipWeaponRecordFromRaw(raw,file){
+  const bp=raw?.Blueprint;
+  const out=bp?.Output;
+  if(!bp||!out||out.Type!=="WeaponGun"||!out.Name) return null;
+  return {
+    name:out.Name,
+    family:"Ship Weapon",
+    size:shipWeaponSize(out,file),
+    class:shipWeaponClassLabel(file),
+    grade:"",
+    manufacturer:"",
+    url:out.UUID?`https://api.star-citizen.wiki/items/${encodeURIComponent(out.UUID)}`:"",
+    recipe:shipWeaponRecipeFromBlueprint(bp),
+    sourceVersion:SHIP_WEAPON_DATA_VERSION,
+    verification:"verified-live-blueprint",
+    blueprintUuid:bp.UUID||"",
+    blueprintKey:bp.Key||"",
+    sourceFile:file
+  };
+}
+async function fetchShipWeaponBlueprint(file){
+  const url=`https://raw.githubusercontent.com/StarCitizenWiki/scunpacked-data/${SHIP_WEAPON_DATA_COMMIT}/blueprints/${file}`;
+  const res=await fetch(url,{cache:"force-cache"});
+  if(!res.ok) throw new Error(`${file}: HTTP ${res.status}`);
+  return shipWeaponRecordFromRaw(await res.json(),file);
+}
+async function mapWithConcurrency(items,limit,worker){
+  const out=new Array(items.length); let next=0;
+  async function runner(){
+    while(true){
+      const i=next++; if(i>=items.length) return;
+      try{ out[i]=await worker(items[i],i); }catch(err){ out[i]={__error:err,item:items[i]}; }
+    }
+  }
+  await Promise.all(Array.from({length:Math.min(limit,items.length)},runner));
+  return out;
+}
+async function ensureShipWeaponRegistryLoaded(){
+  if(shipWeaponRegistryLoaded) return true;
+  if(shipWeaponRegistryLoadPromise) return shipWeaponRegistryLoadPromise;
+  shipWeaponRegistryLoadPromise=(async()=>{
+    const loaded=await mapWithConcurrency(SHIP_WEAPON_BLUEPRINT_FILES,8,fetchShipWeaponBlueprint);
+    const good=loaded.filter(x=>x&&!x.__error);
+    const failures=loaded.filter(x=>x&&x.__error);
+    if(good.length){
+      // Replace the old representative weapon subset only when the live source returned data.
+      for(let i=COMPONENT_REGISTRY.length-1;i>=0;i--) if(COMPONENT_REGISTRY[i].family==="Ship Weapon") COMPONENT_REGISTRY.splice(i,1);
+      const seen=new Set();
+      for(const rec of good){
+        const k=rec.blueprintUuid||`${rec.name}|${rec.size}`;
+        if(seen.has(k)) continue; seen.add(k); COMPONENT_REGISTRY.push(rec);
+      }
+      shipWeaponRegistryLoaded=failures.length===0 && good.length===SHIP_WEAPON_BLUEPRINT_FILES.length;
+    }
+    if(failures.length) console.warn("Ship Weapon blueprint load incomplete",failures.map(x=>x.item));
+    return shipWeaponRegistryLoaded;
+  })();
+  return shipWeaponRegistryLoadPromise;
+}
+const COMPONENT_REGISTRY_COVERAGE = {"Power Plant":"verified-material-slot-coverage","Shield Generator":"verified-material-slot-coverage","Cooler":"verified-material-slot-coverage","Quantum Drive":"live-complete-quantum-drive-registry","Radar":"verified-material-slot-coverage","Mining Laser":"current-craftable-pattern-registry","Mining Module":"tracked-current-recipes","Ore Pod":"tracked-current-recipes","Ship Weapon":"live-complete-ship-weapon-registry"};
+const QUALITY_LOCATION_REGISTRY = {"Agricium":{"Stanton":{"mode":"Ship","chance":"≤4.5%","locations":["Cellin","Daymar","Lagrange D (ARC-L3, CRU-L5, MIC-L4)","Yela"],"source":"Képernyőkép 2026-08-24 183418.png","note":""},"Pyro":{"mode":"Ship","chance":"≤2.2%","locations":["Pyro V-f (Vuur)","Pyro VI (Terminus)"],"source":"Képernyőkép 2026-08-24 183418.png","note":""}},"Aluminum":{"Stanton":{"mode":"Ship","chance":"≤3.0%","locations":["Hurston"],"tiers":[{"chance":"≤3.0%","locations":["Hurston"]},{"chance":"≤2.4%","locations":["Magda","Ita"]}],"source":"Képernyőkép 2026-08-24 183434.png","note":"Hurston az egyetlen első hely, ezért a felhasználói szabály szerint az első és a következő legjobb Quality tier is megjelenik."},"Pyro":{"mode":"Ship","chance":"≤1.0%","locations":["Pyro Deep Space Asteroids"],"source":"Képernyőkép 2026-08-24 183434.png","note":""},"Nyx":{"mode":"Ship","chance":"≤1.4%","locations":["Keeger Belt"],"source":"Képernyőkép 2026-08-24 183434.png","note":""}},"Aslarite":{"Stanton":{"mode":"Ship","chance":"≤1.9%","locations":["Ita","Lagrange B (ARC-L5, CRU-L4, MIC-L3)"],"source":"Képernyőkép 2026-08-24 183443.png","note":""},"Pyro":{"mode":"Ship","chance":"≤1.9%","locations":["Pyro V-e (Fuego)"],"source":"Képernyőkép 2026-08-24 183443.png","note":""}},"Beryl":{"Stanton":{"mode":"Ship","chance":"≤2.1%","locations":["Aaron Halo","Lagrange D (ARC-L3, CRU-L5, MIC-L4)","Wala"],"source":"Képernyőkép 2026-08-24 183452.png","note":""}},"Bexalite":{"Stanton":{"mode":"Ship","chance":"≤2.1%","locations":["Lagrange E (CRU-L1, CRU-L2, HUR-L3)"],"source":"Képernyőkép 2026-08-24 183501.png","note":""},"Pyro":{"mode":"Ship","chance":"≤2.1%","locations":["Pyro V-f (Vuur)"],"source":"Képernyőkép 2026-08-24 183501.png","note":""},"Nyx":{"mode":"Ship","chance":"≤2.1%","locations":["Glaciem Ring","Keeger Belt"],"source":"Képernyőkép 2026-08-24 183501.png","note":""}},"Borase":{"Stanton":{"mode":"Ship","chance":"≤2.8%","locations":["Lagrange A (HUR-L1, HUR-L4)"],"source":"Képernyőkép 2026-08-24 183514.png","note":""},"Pyro":{"mode":"Ship","chance":"≤2.8%","locations":["Pyro IV","Pyro III (Bloom)","Pyro V-c (Adir)"],"source":"Képernyőkép 2026-08-24 183514.png","note":""}},"Copper":{"Stanton":{"mode":"Ship","chance":"≤4.7%","locations":["Clio","Euterpe"],"source":"Képernyőkép 2026-08-24 183651.png","note":""},"Pyro":{"mode":"Ship","chance":"≤3.8%","locations":["Pyro I"],"source":"Képernyőkép 2026-08-24 183651.png","note":""}},"Corundum":{"Stanton":{"mode":"Ship","chance":"≤26.8%","locations":["Aberdeen"],"source":"Képernyőkép 2026-08-24 183701.png","note":""},"Pyro":{"mode":"Ship","chance":"≤13.4%","locations":["Pyro Deep Space Asteroids"],"source":"Képernyőkép 2026-08-24 183701.png","note":""}},"Gold":{"Stanton":{"mode":"Ship","chance":"≤2.1%","locations":["Lagrange B (ARC-L5, CRU-L4, MIC-L3)"],"source":"Képernyőkép 2026-08-24 183710.png","note":""},"Pyro":{"mode":"Ship","chance":"≤2.1%","locations":["Pyro V-a (Ignis)","Pyro V-b (Vatra)","Pyro VI (Terminus)"],"source":"Képernyőkép 2026-08-24 183710.png","note":""}},"Hephaestanite":{"Stanton":{"mode":"Ship","chance":"≤2.2%","locations":["microTech","Calliope"],"source":"Képernyőkép 2026-08-24 183725.png","note":""},"Pyro":{"mode":"Ship","chance":"≤2.2%","locations":["Pyro II (Monox)"],"source":"Képernyőkép 2026-08-24 183725.png","note":""}},"Ice":{"Stanton":{"mode":"Ship","chance":"≤6.3%","locations":["Clio","Euterpe"],"source":"Képernyőkép 2026-08-24 183734.png","note":""},"Pyro":{"mode":"Ship","chance":"≤3.3%","locations":["Pyro VI (Terminus)"],"source":"Képernyőkép 2026-08-24 183734.png","note":""},"Nyx":{"mode":"Ship","chance":"≤3.3%","locations":["Glaciem Ring","Keeger Belt"],"source":"Képernyőkép 2026-08-24 183734.png","note":""}},"Iron":{"Stanton":{"mode":"Ship","chance":"≤5.5%","locations":["Magda","Lyria"],"source":"Képernyőkép 2026-08-24 183745.png","note":""},"Pyro":{"mode":"Ship","chance":"≤6.8%","locations":["Pyro V-c (Adir)"],"source":"Képernyőkép 2026-08-24 183745.png","note":""},"Nyx":{"mode":"Ship","chance":"≤3.3%","locations":["Glaciem Ring"],"source":"Képernyőkép 2026-08-24 183745.png","note":""}},"Laranite":{"Stanton":{"mode":"Ship","chance":"≤3.3%","locations":["Lagrange A (HUR-L1, HUR-L4)","Wala","Lyria"],"source":"Képernyőkép 2026-08-24 183755.png","note":""},"Pyro":{"mode":"Ship","chance":"≤3.3%","locations":["Pyro IV"],"source":"Képernyőkép 2026-08-24 183755.png","note":""}},"Ouratite":{"Stanton":{"mode":"Ship","chance":"≤0.7%","locations":["Aberdeen","Arial","Hurston","Yela Asteroid Belt"],"source":"Képernyőkép 2026-08-24 183819.png","note":""},"Pyro":{"mode":"Ship","chance":"≤0.7%","locations":["Terminus Ring"],"source":"Képernyőkép 2026-08-24 183819.png","note":""}},"Quantainium":{"Stanton":{"mode":"Ship","chance":"≤0.2%","locations":["Calliope","Aaron Halo","Aberdeen","Arial","Cellin","Clio","Daymar","Euterpe","Hurston","Ita","Magda","Wala","Yela","microTech","Lyria"],"source":"Képernyőkép 2026-08-24 183829.png","note":""}},"Quartz":{"Stanton":{"mode":"Ship","chance":"≤4.1%","locations":["Daymar"],"source":"Képernyőkép 2026-08-24 183840.png","note":""},"Pyro":{"mode":"Ship","chance":"≤4.1%","locations":["Pyro III (Bloom)"],"source":"Képernyőkép 2026-08-24 183840.png","note":""}},"Silicon":{"Stanton":{"mode":"Ship","chance":"≤4.1%","locations":["Daymar"],"source":"Képernyőkép 2026-08-24 183912.png","note":""},"Pyro":{"mode":"Ship","chance":"≤4.2%","locations":["Pyro V-a (Ignis)","Pyro V-b (Vatra)"],"source":"Képernyőkép 2026-08-24 183912.png","note":""}},"Taranite":{"Stanton":{"mode":"Ship","chance":"≤2.1%","locations":["Cellin","Clio","Euterpe","Lagrange F (HUR-L2, ARC-L1, ARC-L2, ARC-L4)","Yela"],"source":"Képernyőkép 2026-08-24 183932.png","note":""}},"Tin":{"Stanton":{"mode":"Ship","chance":"≤6.9%","locations":["Hurston"],"tiers":[{"chance":"≤6.9%","locations":["Hurston"]},{"chance":"≤5.5%","locations":["Ita"]}],"source":"Képernyőkép 2026-08-24 183946.png","note":"Hurston az egyetlen első hely, ezért az első és a következő legjobb Quality tier is megjelenik."},"Pyro":{"mode":"Ship","chance":"≤5.7%","locations":["Pyro V-a (Ignis)"],"source":"Képernyőkép 2026-08-24 183946.png","note":""}},"Titanium":{"Stanton":{"mode":"Ship","chance":"≤4.5%","locations":["Aberdeen","Lagrange E (CRU-L1, CRU-L2, HUR-L3)","Yela Asteroid Belt"],"source":"Képernyőkép 2026-08-24 183959.png","note":""},"Pyro":{"mode":"Ship","chance":"≤4.5%","locations":["Terminus Ring"],"source":"Képernyőkép 2026-08-24 183959.png","note":""}},"Torite":{"Stanton":{"mode":"Ship","chance":"≤4.5%","locations":["Lagrange C (HUR-L5, MIC-L1, MIC-L2, MIC-L5, CRU-L3)"],"source":"Képernyőkép 2026-08-24 184011.png","note":""},"Pyro":{"mode":"Ship","chance":"≤4.5%","locations":["Pyro Deep Space Asteroids"],"source":"Képernyőkép 2026-08-24 184011.png","note":""},"Nyx":{"mode":"Ship","chance":"≤4.5%","locations":["Glaciem Ring","Keeger Belt"],"source":"Képernyőkép 2026-08-24 184011.png","note":""}},"Tungsten":{"Stanton":{"mode":"Ship","chance":"≤4.5%","locations":["Lagrange F (HUR-L2, ARC-L1, ARC-L2, ARC-L4)"],"source":"Képernyőkép 2026-08-24 184021.png","note":""},"Pyro":{"mode":"Ship","chance":"≤4.5%","locations":["Pyro V-c (Adir)","Pyro V-d (Fairo)"],"source":"Képernyőkép 2026-08-24 184021.png","note":""}},"Beradom":{"Stanton":{"mode":"ROC","chance":"≤64.0%","locations":["Hurston"],"tiers":[{"chance":"≤64.0%","locations":["Hurston"]},{"chance":"≤56.0%","locations":["Cellin","Wala"]}],"source":"Képernyőkép 2026-08-24 184031.png","note":"Hurston az egyetlen első hely, ezért az első és a következő legjobb Quality tier is megjelenik."},"Pyro":{"mode":"ROC","chance":"≤100.0%","locations":["Pyro I","Pyro III (Bloom)","Pyro V-d (Fairo)"],"source":"Képernyőkép 2026-08-24 184031.png","note":""}},"Carinite":{"Stanton":{"mode":"ROC","chance":"≤100.0%","locations":["Hathor Caves"],"source":"Képernyőkép 2026-08-24 184040.png","note":""}},"Feynmaline":{"Stanton":{"mode":"ROC","chance":"≤64.0%","locations":["Aberdeen"],"source":"Képernyőkép 2026-08-24 184051.png","note":""},"Pyro":{"mode":"ROC","chance":"≤100.0%","locations":["Pyro IV","Pyro V-a (Ignis)","Pyro V-e (Fuego)","Pyro VI (Terminus)"],"source":"Képernyőkép 2026-08-24 184051.png","note":""}},"Glacosite":{"Stanton":{"mode":"ROC","chance":"≤88.0%","locations":["Euterpe"],"source":"Képernyőkép 2026-08-24 184102.png","note":""},"Pyro":{"mode":"ROC","chance":"≤100.0%","locations":["Pyro II (Monox)","Pyro V-c (Adir)","Pyro V-f (Vuur)"],"source":"Képernyőkép 2026-08-24 184102.png","note":""}},"Aphorite":{"Stanton":{"mode":"FPS","chance":"≤61.1%","locations":["Calliope","Clio","Euterpe","Lyria","Wala","microTech"],"source":"Képernyőkép 2026-08-24 184115.png","note":"A Nyx / Breaker Stations Interior 75.0% kártyán a forrás figyelmeztetése: „Based on personal guesstimate, not game data”."},"Pyro":{"mode":"FPS","chance":"≤61.1%","locations":["Pyro III (Bloom)","Pyro V-e (Fuego)","Pyro VI (Terminus)"],"source":"Képernyőkép 2026-08-24 184115.png","note":"A Nyx / Breaker Stations Interior 75.0% kártyán a forrás figyelmeztetése: „Based on personal guesstimate, not game data”."},"Nyx":{"mode":"FPS","chance":"≤75.0%","locations":["Breaker Stations Interior"],"source":"Képernyőkép 2026-08-24 184115.png","note":"A Nyx / Breaker Stations Interior 75.0% kártyán a forrás figyelmeztetése: „Based on personal guesstimate, not game data”."}},"Carinite Pure":{"Stanton":{"mode":"FPS","chance":"≤0.5%","locations":["Hathor Caves"],"source":"Képernyőkép 2026-08-24 184128.png","note":""}},"Dolivine":{"Stanton":{"mode":"FPS","chance":"≤36.9%","locations":["Calliope","Clio","Euterpe","Lyria","Wala","microTech"],"source":"Képernyőkép 2026-08-24 184147.png","note":""},"Pyro":{"mode":"FPS","chance":"≤36.9%","locations":["Pyro III (Bloom)","Pyro V-e (Fuego)","Pyro VI (Terminus)"],"source":"Képernyőkép 2026-08-24 184147.png","note":""}},"Hadanite":{"Stanton":{"mode":"FPS","chance":"≤6.0%","locations":["Aberdeen","Arial","Cellin","Daymar","Hurston","Ita","Magda","Yela"],"source":"Képernyőkép 2026-08-24 184157.png","note":""},"Pyro":{"mode":"FPS","chance":"≤6.0%","locations":["Pyro I","Pyro II (Monox)","Pyro IV","Pyro V-a (Ignis)","Pyro V-b (Vatra)","Pyro V-c (Adir)","Pyro V-d (Fairo)","Pyro V-f (Vuur)"],"source":"Képernyőkép 2026-08-24 184157.png","note":""}},"Jaclium":{"Stanton":{"mode":"FPS","chance":"≤19.5%","locations":["Hathor Caves"],"source":"Képernyőkép 2026-08-24 184206.png","note":""}},"Janalite":{"Stanton":{"mode":"FPS","chance":"≤2.0%","locations":["Calliope","Clio","Euterpe","Lyria","Wala","microTech"],"source":"Képernyőkép 2026-08-24 184218.png","note":""},"Pyro":{"mode":"FPS","chance":"≤2.0%","locations":["Pyro III (Bloom)","Pyro V-e (Fuego)","Pyro VI (Terminus)"],"source":"Képernyőkép 2026-08-24 184218.png","note":""}},"Saldynium":{"Stanton":{"mode":"FPS","chance":"≤15.8%","locations":["Hathor Caves"],"source":"Képernyőkép 2026-08-24 184233.png","note":""}},"Degnous":{"Stanton":{"mode":"Harvest","chance":"12.2%","locations":["Hurston"],"source":"Képernyőkép 2026-08-24 184256.png","note":""}},"Golden Medmon":{"Stanton":{"mode":"Harvest","chance":"24.7%","locations":["microTech"],"source":"Képernyőkép 2026-08-24 184316.png","note":""}},"Heart of the Woods":{"Stanton":{"mode":"Harvest","chance":"24.7%","locations":["microTech"],"source":"Képernyőkép 2026-08-24 184324.png","note":""}},"Pitambu":{"Stanton":{"mode":"Harvest","chance":"24.7%","locations":["microTech"],"source":"Képernyőkép 2026-08-24 184338.png","note":""}},"Prota":{"Stanton":{"mode":"Harvest","chance":"100.0%","locations":["Arial"],"source":"Képernyőkép 2026-08-24 184345.png","note":""}},"Revenant":{"Stanton":{"mode":"Harvest","chance":"100.0%","locations":["Daymar"],"source":"Képernyőkép 2026-08-24 184353.png","note":""}},"Sunset Berry":{"Stanton":{"mode":"Harvest","chance":"24.7%","locations":["microTech"],"source":"Képernyőkép 2026-08-24 184359.png","note":""}},"Comp Board":{"Stanton":{"mode":"Harvest","chance":"12.2%","locations":["Hurston"],"source":"Képernyőkép 2026-08-24 184414.png","note":""}},"Riccite":{"Pyro":{"mode":"Ship","chance":"≤1.6%","locations":["Pyro Deep Space Asteroids","Pyro III (Bloom)","Pyro V-a (Ignis)","Pyro V-b (Vatra)","Pyro V-c (Adir)","Pyro VI (Terminus)"],"source":"Képernyőkép 2026-08-24 183851.png","note":""}},"Stileron":{"Pyro":{"mode":"Ship","chance":"≤0.3%","locations":["Pyro I","Pyro II (Monox)","Pyro IV","Pyro Deep Space Asteroids","Pyro III (Bloom)","Pyro VI (Terminus)"],"source":"Képernyőkép 2026-08-24 183921.png","note":""}},"Amiant":{"Pyro":{"mode":"Harvest","chance":"50.0%","locations":["Pyro IV"],"source":"Képernyőkép 2026-08-24 184241.png","note":""}},"Decari":{"Pyro":{"mode":"Harvest","chance":"46.2%","locations":["Pyro I"],"source":"Képernyőkép 2026-08-24 184249.png","note":""}},"Flareweed":{"Pyro":{"mode":"Harvest","chance":"50.0%","locations":["Pyro IV"],"source":"Képernyőkép 2026-08-24 184303.png","note":""}},"Fotia":{"Pyro":{"mode":"Harvest","chance":"30.8%","locations":["Pyro I"],"source":"Képernyőkép 2026-08-24 184309.png","note":""}},"Pingala":{"Pyro":{"mode":"Harvest","chance":"100.0%","locations":["Pyro II (Monox)"],"source":"Képernyőkép 2026-08-24 184331.png","note":""}},"Wuotan":{"Pyro":{"mode":"Harvest","chance":"23.1%","locations":["Pyro I"],"source":"Képernyőkép 2026-08-24 184406.png","note":""}},"Lindinium":{"Nyx":{"mode":"Ship","chance":"≤1.6%","locations":["Glaciem Ring","Keeger Belt"],"source":"Képernyőkép 2026-08-24 183807.png","note":""}},"Savrilium":{"Nyx":{"mode":"Ship","chance":"≤6.8%","locations":["Breaker Stations Large Geode"],"tiers":[{"chance":"≤6.8%","locations":["Breaker Stations Large Geode"]},{"chance":"≤0.3%","locations":["Glaciem Ring","Keeger Belt"]}],"source":"Képernyőkép 2026-08-24 183900.png","note":"A forráskártya típusa Event. A Célzott bányászat miatt a második legjobb Nyx tier is megmarad: Glaciem Ring és Keeger Belt ≤0.3%."}},"Sadaryx":{"Nyx":{"mode":"FPS","chance":"≤25.0%","locations":["Breaker Stations Interior"],"source":"Képernyőkép 2026-08-24 184226.png","note":"A forrás figyelmeztetése: „Based on personal guesstimate, not game data”."}}};
+const QUALITY_LOCATION_ALIASES = {"Pressurized Ice":"Ice","Quantanium":"Quantainium","Saldynium (Ore)":"Saldynium"};
+
+const REFINERY_BONUS_REGISTRY = {"Agricium":{"ST":{"positive":[{"refinery":"MIC-L1","bonus":8},{"refinery":"Terra Gateway (Stanton)","bonus":8}],"hasZero":true,"hasNegative":true},"NX":{"positive":[{"refinery":"Levski","bonus":8}],"hasZero":false,"hasNegative":true},"PY":{"positive":[],"hasZero":false,"hasNegative":true}},"Aluminum":{"ST":{"positive":[{"refinery":"MIC-L1","bonus":7},{"refinery":"Terra Gateway (Stanton)","bonus":7}],"hasZero":true,"hasNegative":true},"NX":{"positive":[{"refinery":"Levski","bonus":8}],"hasZero":false,"hasNegative":true},"PY":{"positive":[],"hasZero":false,"hasNegative":true}},"Beryl":{"ST":{"positive":[{"refinery":"ARC-L1","bonus":7},{"refinery":"CRU-L1","bonus":7},{"refinery":"MIC-L5","bonus":7},{"refinery":"Nyx Gateway (Stanton)","bonus":7},{"refinery":"Pyro Gateway (Stanton)","bonus":7},{"refinery":"HUR-L2","bonus":1}],"hasZero":true,"hasNegative":true},"NX":{"positive":[{"refinery":"Levski","bonus":8}],"hasZero":true,"hasNegative":false},"PY":{"positive":[],"hasZero":true,"hasNegative":false}},"Bexalite":{"ST":{"positive":[{"refinery":"MIC-L5","bonus":12},{"refinery":"MIC-L2","bonus":9},{"refinery":"ARC-L2","bonus":2}],"hasZero":true,"hasNegative":true},"NX":{"positive":[{"refinery":"Levski","bonus":8}],"hasZero":false,"hasNegative":true},"PY":{"positive":[],"hasZero":false,"hasNegative":true}},"Borase":{"ST":{"positive":[{"refinery":"MIC-L5","bonus":9},{"refinery":"ARC-L2","bonus":2},{"refinery":"HUR-L1","bonus":1}],"hasZero":true,"hasNegative":true},"NX":{"positive":[{"refinery":"Levski","bonus":8},{"refinery":"Pyro Gateway (Nyx)","bonus":1},{"refinery":"Stanton Gateway (Nyx)","bonus":1}],"hasZero":false,"hasNegative":false},"PY":{"positive":[{"refinery":"Checkmate","bonus":1},{"refinery":"Nyx Gateway (Pyro)","bonus":1},{"refinery":"Orbituary","bonus":1},{"refinery":"Ruin Station","bonus":1},{"refinery":"Stanton Gateway (Pyro)","bonus":1}],"hasZero":false,"hasNegative":false}},"Copper":{"ST":{"positive":[{"refinery":"MIC-L5","bonus":9},{"refinery":"ARC-L2","bonus":6},{"refinery":"MIC-L1","bonus":4},{"refinery":"Terra Gateway (Stanton)","bonus":4},{"refinery":"MIC-L2","bonus":2}],"hasZero":true,"hasNegative":true},"NX":{"positive":[{"refinery":"Levski","bonus":8}],"hasZero":false,"hasNegative":true},"PY":{"positive":[],"hasZero":false,"hasNegative":true}},"Corundum":{"ST":{"positive":[{"refinery":"CRU-L1","bonus":7},{"refinery":"Pyro Gateway (Stanton)","bonus":7},{"refinery":"MIC-L2","bonus":6},{"refinery":"MIC-L1","bonus":2},{"refinery":"Terra Gateway (Stanton)","bonus":2},{"refinery":"HUR-L2","bonus":1}],"hasZero":true,"hasNegative":true},"NX":{"positive":[{"refinery":"Levski","bonus":8}],"hasZero":false,"hasNegative":true},"PY":{"positive":[],"hasZero":false,"hasNegative":true}},"Gold":{"ST":{"positive":[{"refinery":"MIC-L2","bonus":9},{"refinery":"ARC-L2","bonus":7},{"refinery":"HUR-L2","bonus":1},{"refinery":"MIC-L1","bonus":1},{"refinery":"Terra Gateway (Stanton)","bonus":1}],"hasZero":true,"hasNegative":true},"NX":{"positive":[{"refinery":"Levski","bonus":5}],"hasZero":false,"hasNegative":true},"PY":{"positive":[],"hasZero":false,"hasNegative":true}},"Hephaestanite":{"ST":{"positive":[{"refinery":"MIC-L5","bonus":8}],"hasZero":true,"hasNegative":true},"NX":{"positive":[{"refinery":"Levski","bonus":8}],"hasZero":true,"hasNegative":false},"PY":{"positive":[],"hasZero":true,"hasNegative":false}},"Iron":{"ST":{"positive":[{"refinery":"MIC-L5","bonus":8},{"refinery":"CRU-L1","bonus":2},{"refinery":"Pyro Gateway (Stanton)","bonus":2},{"refinery":"ARC-L1","bonus":1},{"refinery":"Nyx Gateway (Stanton)","bonus":1}],"hasZero":true,"hasNegative":true},"NX":{"positive":[{"refinery":"Levski","bonus":8}],"hasZero":false,"hasNegative":true},"PY":{"positive":[],"hasZero":false,"hasNegative":true}},"Laranite":{"ST":{"positive":[{"refinery":"HUR-L1","bonus":2},{"refinery":"MIC-L1","bonus":2},{"refinery":"Terra Gateway (Stanton)","bonus":2}],"hasZero":true,"hasNegative":true},"NX":{"positive":[{"refinery":"Levski","bonus":7},{"refinery":"Pyro Gateway (Nyx)","bonus":2},{"refinery":"Stanton Gateway (Nyx)","bonus":2}],"hasZero":false,"hasNegative":false},"PY":{"positive":[{"refinery":"Checkmate","bonus":2},{"refinery":"Nyx Gateway (Pyro)","bonus":2},{"refinery":"Orbituary","bonus":2},{"refinery":"Ruin Station","bonus":2},{"refinery":"Stanton Gateway (Pyro)","bonus":2}],"hasZero":false,"hasNegative":false}},"Lindinium":{"ST":{"positive":[{"refinery":"MIC-L5","bonus":7}],"hasZero":true,"hasNegative":false},"NX":{"positive":[{"refinery":"Levski","bonus":4}],"hasZero":true,"hasNegative":false},"PY":{"positive":[],"hasZero":true,"hasNegative":false}},"Quantainium":{"ST":{"positive":[{"refinery":"ARC-L1","bonus":3},{"refinery":"ARC-L2","bonus":3},{"refinery":"Nyx Gateway (Stanton)","bonus":3},{"refinery":"HUR-L1","bonus":2},{"refinery":"HUR-L2","bonus":2},{"refinery":"MIC-L2","bonus":1}],"hasZero":true,"hasNegative":false},"NX":{"positive":[{"refinery":"Levski","bonus":5},{"refinery":"Pyro Gateway (Nyx)","bonus":2},{"refinery":"Stanton Gateway (Nyx)","bonus":2}],"hasZero":false,"hasNegative":false},"PY":{"positive":[{"refinery":"Checkmate","bonus":2},{"refinery":"Nyx Gateway (Pyro)","bonus":2},{"refinery":"Orbituary","bonus":2},{"refinery":"Ruin Station","bonus":2},{"refinery":"Stanton Gateway (Pyro)","bonus":2}],"hasZero":false,"hasNegative":false}},"Quartz":{"ST":{"positive":[{"refinery":"ARC-L1","bonus":11},{"refinery":"Nyx Gateway (Stanton)","bonus":11}],"hasZero":true,"hasNegative":true},"NX":{"positive":[{"refinery":"Levski","bonus":8}],"hasZero":true,"hasNegative":false},"PY":{"positive":[],"hasZero":true,"hasNegative":false}},"Savrilium":{"ST":{"positive":[{"refinery":"MIC-L5","bonus":6}],"hasZero":true,"hasNegative":false},"NX":{"positive":[{"refinery":"Levski","bonus":1}],"hasZero":true,"hasNegative":false},"PY":{"positive":[],"hasZero":true,"hasNegative":false}},"Taranite":{"ST":{"positive":[{"refinery":"ARC-L4","bonus":5}],"hasZero":true,"hasNegative":true},"NX":{"positive":[{"refinery":"Levski","bonus":8}],"hasZero":true,"hasNegative":false},"PY":{"positive":[],"hasZero":true,"hasNegative":false}},"Titanium":{"ST":{"positive":[{"refinery":"MIC-L5","bonus":13},{"refinery":"MIC-L2","bonus":6},{"refinery":"ARC-L1","bonus":5},{"refinery":"Nyx Gateway (Stanton)","bonus":5},{"refinery":"ARC-L2","bonus":3}],"hasZero":true,"hasNegative":true},"NX":{"positive":[{"refinery":"Levski","bonus":8}],"hasZero":true,"hasNegative":false},"PY":{"positive":[],"hasZero":true,"hasNegative":false}},"Torite":{"ST":{"positive":[{"refinery":"MIC-L5","bonus":8}],"hasZero":true,"hasNegative":false},"NX":{"positive":[{"refinery":"Levski","bonus":1}],"hasZero":true,"hasNegative":false},"PY":{"positive":[],"hasZero":true,"hasNegative":false}},"Tungsten":{"ST":{"positive":[{"refinery":"MIC-L2","bonus":9},{"refinery":"HUR-L1","bonus":4},{"refinery":"CRU-L1","bonus":2},{"refinery":"Pyro Gateway (Stanton)","bonus":2}],"hasZero":true,"hasNegative":true},"NX":{"positive":[{"refinery":"Levski","bonus":8},{"refinery":"Pyro Gateway (Nyx)","bonus":4},{"refinery":"Stanton Gateway (Nyx)","bonus":4}],"hasZero":false,"hasNegative":false},"PY":{"positive":[{"refinery":"Checkmate","bonus":4},{"refinery":"Nyx Gateway (Pyro)","bonus":4},{"refinery":"Orbituary","bonus":4},{"refinery":"Ruin Station","bonus":4},{"refinery":"Stanton Gateway (Pyro)","bonus":4}],"hasZero":false,"hasNegative":false}}};
+const REFINERY_SYSTEM_LABELS = {"ST":"Stanton","NX":"Nyx","PY":"Pyro"};
+const MATERIAL_SOURCE_RULES = {"Pressurized Ice":{"radarSource":"Ice","craftingName":"Pressurized Ice","note":"Radar/signature source is Ice; crafting recipes use Pressurized Ice."},"Saldynium (Ore)":{"displayName":"Saldynium","craftingToken":"Saldynium (Ore)","note":"Restored material; verified functional use in Mass Driver Magnetizer recipes."}};
+const MATERIALS = [{"name":"Agricium","q500":["Shield Generator → Shell","Quantum Drive → Case","Radar → Case","Ship Weapon → Frame / Reinforced Frame"],"qHigh":["Cooler → Pump Impeller","Radar → Signal Processor"],"rarity":"uncommon","radarBase":3885,"radarCount":5,"mining":"Ship Mining","source":"Agricium","order":16,"displayName":"Agricium"},{"name":"Aluminum","q500":[],"qHigh":[],"rarity":"common","radarBase":4285,"radarCount":6,"mining":"Ship Mining","source":"Aluminium","order":25,"displayName":"Aluminum"},{"name":"Aphorite","q500":[],"qHigh":["Ship Weapon → Distorter Unit"],"rarity":"fps","radarBase":3000,"radarCount":10,"mining":"FPS Mining","source":"FPS Mineables","order":30,"displayName":"Aphorite"},{"name":"Aslarite","q500":[],"qHigh":[],"rarity":"uncommon","radarBase":3840,"radarCount":5,"mining":"Ship Mining","source":"Aslarite","order":13,"displayName":"Aslarite"},{"name":"Beradom","q500":[],"qHigh":["Shield Generator → Frequency Controller"],"rarity":"roc","radarBase":4000,"radarCount":7,"mining":"ROC / Ground Vehicle","source":"ROC Mineables","order":27,"alias":"Beradon","displayName":"Beradom"},{"name":"Beryl","q500":[],"qHigh":["Power Plant → Voltage Regulator","Quantum Drive → Containment Matrix"],"rarity":"rare","radarBase":3540,"radarCount":4,"mining":"Ship Mining","source":"Beryl","order":7,"displayName":"Beryl"},{"name":"Bexalite","q500":[],"qHigh":["Quantum Drive → Containment Matrix","Radar → Transmitter"],"rarity":"rare","radarBase":3600,"radarCount":4,"mining":"Ship Mining","source":"Bexalite","order":11,"displayName":"Bexalite"},{"name":"Borase","q500":["Power Plant → Shell","Shield Generator → Shell","Cooler → Shell","Quantum Drive → Case","Radar → Case","Ship Weapon → Reinforced Frame"],"qHigh":["Cooler → Pump Impeller"],"rarity":"rare","radarBase":3570,"radarCount":4,"mining":"Ship Mining","source":"Borase","order":9,"displayName":"Borase"},{"name":"Copper","q500":["Mining Module (Stampede / Torrent III) → Wiring · Q500"],"qHigh":["Ship Weapon → Wiring","Mining Laser → Bus Bars · Laser Power · Q900+ ajánlott","Mining Module (Clearcut / Deluge / Overrun) → Wiring · Q800 minimum · fölötte nincs extra hatás"],"rarity":"common","radarBase":4240,"radarCount":6,"mining":"Ship Mining","source":"Copper","order":22,"displayName":"Copper"},{"name":"Corundum","q500":[],"qHigh":["Shield Generator → Field Array","Quantum Drive → Containment Matrix"],"rarity":"common","radarBase":4225,"radarCount":6,"mining":"Ship Mining","source":"Corundum","order":21,"displayName":"Corundum"},{"name":"Dolivine","q500":[],"qHigh":["Ship Weapon → Aperture Iris"],"rarity":"fps","radarBase":3000,"radarCount":10,"mining":"FPS Mining","source":"FPS Mineables","order":31,"displayName":"Dolivine"},{"name":"Feynmaline","q500":[],"qHigh":["Shield Generator → Frequency Controller"],"rarity":"roc","radarBase":4000,"radarCount":7,"mining":"ROC / Ground Vehicle","source":"ROC Mineables","order":28,"displayName":"Feynmaline"},{"name":"Glacosite","q500":[],"qHigh":["Shield Generator → Frequency Controller"],"rarity":"roc","radarBase":4000,"radarCount":7,"mining":"ROC / Ground Vehicle","source":"ROC Mineables","order":29,"displayName":"Glacosite"},{"name":"Gold","q500":[],"qHigh":["Shield Generator → Field Array","Radar → Signal Processor","Ship Weapon → Wiring / Electronics"],"rarity":"rare","radarBase":3585,"radarCount":4,"mining":"Ship Mining","source":"Gold","order":10,"displayName":"Gold"},{"name":"Hadanite","q500":[],"qHigh":["Ship Weapon → Emitter"],"rarity":"fps","radarBase":3000,"radarCount":10,"mining":"FPS Mining","source":"FPS Mineables","order":32,"displayName":"Hadanite"},{"name":"Hephaestanite","q500":[],"qHigh":["Quantum Drive → Containment Matrix"],"rarity":"common","radarBase":4180,"radarCount":6,"mining":"Ship Mining","source":"Hephaestanite","order":18,"displayName":"Hephaestanite"},{"name":"Pressurized Ice","q500":[],"qHigh":["Cooler → Coolant · Coolant Rating · Q900+ ajánlott"],"rarity":"common","radarBase":4300,"radarCount":6,"mining":"Ship Mining","source":"Ice","order":26,"displayName":"Ice"},{"name":"Iron","q500":["Power Plant → Shell","Quantum Drive → Case","Ship Weapon → Frame","Mining Laser → Frame · Integrity / HP","Mining Module (Stampede / Torrent III) → Case · Q500","Ore Pod (Argo / Drake / MISC standard) → Frame · alacsony Quality csoport"],"qHigh":["Cooler → Pump Impeller","Quantum Drive → Injector Nozzles","Mining Module (Clearcut / Deluge / Overrun) → Case · Q800 minimum · fölötte nincs extra hatás","Ore Pod (GOLEM MC-4 / MISC Enhanced) → Frame · Q800 minimum · fölötte nincs extra hatás"],"rarity":"common","radarBase":4270,"radarCount":6,"mining":"Ship Mining","source":"Iron","order":24,"displayName":"Iron"},{"name":"Janalite","q500":[],"qHigh":[],"rarity":"fps","radarBase":3000,"radarCount":10,"mining":"FPS Mining","source":"FPS Mineables","order":33,"displayName":"Janalite"},{"name":"Laranite","q500":[],"qHigh":["Power Plant → Voltage Regulator / Stator Cores","Shield Generator → Field Array","Quantum Drive → Containment Matrix","Radar → Transmitter"],"rarity":"uncommon","radarBase":3825,"radarCount":5,"mining":"Ship Mining","source":"Laranite","order":12,"displayName":"Laranite"},{"name":"Lindinium","q500":["Power Plant → Shell"],"qHigh":["Radar → Signal Processor","Ship Weapon → Radiator"],"rarity":"epic","radarBase":3400,"radarCount":3,"mining":"Ship Mining","source":"Lindinium","order":6,"displayName":"Lindinium"},{"name":"Ouratite","q500":[],"qHigh":["Power Plant → Stator Cores","Quantum Drive → Containment Matrix","Ship Weapon → Drive Motor"],"rarity":"epic","radarBase":3370,"radarCount":3,"mining":"Ship Mining","source":"Ouratite","order":4,"displayName":"Ouratite"},{"name":"Quantainium","q500":[],"qHigh":["Ship Weapon → Acceleration Unit"],"rarity":"legendary","radarBase":3170,"radarCount":2,"mining":"Ship Mining","source":"Quantainium","order":1,"displayName":"Quantanium"},{"name":"Quartz","q500":[],"qHigh":["Radar → Transmitter"],"rarity":"common","radarBase":4210,"radarCount":6,"mining":"Ship Mining","source":"Quartz","order":20,"displayName":"Quartz"},{"name":"Riccite","q500":["Power Plant → Shell","Shield Generator → Shell","Cooler → Shell"],"qHigh":["Power Plant → Stator Cores","Shield Generator → Field Array","Radar → Signal Processor","Ship Weapon → Cycler"],"rarity":"epic","radarBase":3385,"radarCount":3,"mining":"Ship Mining","source":"Riccite","order":5,"displayName":"Riccite"},{"name":"Savrilium","q500":["Shield Generator → Shell"],"qHigh":["Power Plant → Stator Cores","Shield Generator → Field Array","Quantum Drive → Containment Matrix","Radar → Signal Processor","Ship Weapon → Torque Junction"],"rarity":"legendary","radarBase":3200,"radarCount":2,"mining":"Ship Mining","source":"Savrilium","order":3,"displayName":"Savrilium"},{"name":"Silicon","q500":[],"qHigh":["Power Plant → Voltage Regulator / Stator Cores","Radar → Signal Processor"],"rarity":"common","radarBase":4255,"radarCount":6,"mining":"Ship Mining","source":"Silicon","order":23,"displayName":"Silicon"},{"name":"Stileron","q500":["Power Plant → Shell","Cooler → Shell"],"qHigh":["Quantum Drive → Containment Matrix","Radar → Signal Processor"],"rarity":"legendary","radarBase":3185,"radarCount":2,"mining":"Ship Mining","source":"Stileron","order":2,"displayName":"Stileron"},{"name":"Taranite","q500":[],"qHigh":["Power Plant → Stator Cores"],"rarity":"rare","radarBase":3555,"radarCount":4,"mining":"Ship Mining","source":"Taranite","order":8,"displayName":"Taranite"},{"name":"Tin","q500":["Shield Generator → Shell","Quantum Drive → Case","Radar → Case"],"qHigh":[],"rarity":"common","radarBase":4195,"radarCount":6,"mining":"Ship Mining","source":"Tin","order":19,"displayName":"Tin"},{"name":"Titanium","q500":["Shield Generator → Shell","Radar → Case","Quantum Drive → Case","Ship Weapon → Frame / Reinforced Frame"],"qHigh":["Cooler → Pump Impeller","Ship Weapon → Barrel"],"rarity":"uncommon","radarBase":3855,"radarCount":5,"mining":"Ship Mining","source":"Titanium","order":14,"displayName":"Titanium"},{"name":"Torite","q500":["Power Plant → Shell","Shield Generator → Shell","Cooler → Shell","Quantum Drive → Case","Radar → Case"],"qHigh":["Ship Weapon → Radiator"],"rarity":"uncommon","radarBase":3900,"radarCount":5,"mining":"Ship Mining","source":"Torite","order":17,"displayName":"Torite"},{"name":"Tungsten","q500":["Shield Generator → Shell","Cooler → Shell","Quantum Drive → Case","Ship Weapon → Frame / Reinforced Frame"],"qHigh":["Cooler → Pump Impeller","Quantum Drive → Injector Nozzles","Ship Weapon → Barrels"],"rarity":"uncommon","radarBase":3870,"radarCount":5,"mining":"Ship Mining","source":"Tungsten","order":15,"displayName":"Tungsten"},{"name":"Sadaryx","q500":[],"qHigh":["Mining Laser → Emitter · Laser Power · Q900+ ajánlott"],"rarity":"fps","radarBase":3000,"radarCount":10,"mining":"FPS / Hand Mining","source":"Sadaryx","order":34,"displayName":"Sadaryx"},{"name":"Saldynium (Ore)","q500":[],"qHigh":["Ship Weapon → Magnetizer · Weapon Damage · Q900+ ajánlott"],"rarity":"fps","radarBase":3000,"radarCount":10,"mining":"FPS / Hand Mining","source":"Saldynium (Ore)","order":35,"displayName":"Saldynium"}];
+
+function fmtBonus(n){return `${n>0?'+':''}${n}%`}
+
+function qualityLookupKeys(m){
+  return [m.name,m.displayName,QUALITY_LOCATION_ALIASES[m.name],QUALITY_LOCATION_ALIASES[m.displayName]].filter(Boolean);
+}
+const AARON_HALO_ROUTE_URL="https://cstone.space/resources/knowledge-base/36-refinery-to-aaron-halo-mining-routes";
+function renderQualityLocationName(name){
+  const value=String(name||"");
+  if(value.trim()==="Aaron Halo"){
+    return `<a class="quality-loc-place quality-loc-guide-link" href="${AARON_HALO_ROUTE_URL}" target="_blank" rel="noopener noreferrer" title="${esc(t("aaronHaloGuide"))}">${esc(value)}</a>`;
+  }
+  return `<span class="quality-loc-place">${esc(value)}</span>`;
+}
+
+function renderQualityLocationBlock(m){
+  const keys=qualityLookupKeys(m);
+  let data=null;
+  for(const key of keys){ if(QUALITY_LOCATION_REGISTRY[key]){ data=QUALITY_LOCATION_REGISTRY[key]; break; } }
+  if(!data) return "";
+  const order=["Stanton","Pyro","Nyx"];
+  const rows=order.filter(sys=>data[sys]).map(sys=>{
+    const entry=data[sys];
+    const tiers=Array.isArray(entry.tiers)&&entry.tiers.length?entry.tiers:null;
+    let leftChance=entry.chance||"";
+    let places="";
+    if(tiers){
+      leftChance="";
+      places=tiers.map(t=>{
+        const locs=Array.isArray(t.locations)?t.locations:[];
+        const locHtml=locs.map(renderQualityLocationName).join('<span class="quality-loc-sep">·</span>');
+        return `<span class="quality-loc-tier"><span class="quality-loc-tier-chance">${esc(t.chance||"")}</span>${locHtml}</span>`;
+      }).join("");
+    }else{
+      const locs=Array.isArray(entry.locations)?entry.locations:[];
+      places=locs.map(renderQualityLocationName).join('<span class="quality-loc-sep">·</span>');
+    }
+    const note=entry.note?`<div class="quality-loc-note">${esc(localizeQualityNote(entry.note))}</div>`:"";
+    return `<div class="quality-loc-row"><div class="quality-loc-left"><span class="quality-loc-system">${esc(sys)}</span>${leftChance?`<span class="quality-loc-chance">${esc(leftChance)}</span>`:""}</div><div class="quality-loc-right">${places}</div>${note}</div>`;
+  });
+  if(!rows.length) return "";
+  return `<div class="quality-loc-block"><h4 class="quality-loc-title">${esc(t("bestQualityLocations"))}</h4><div class="quality-loc-grid">${rows.join("")}</div></div>`;
+}
+
+function renderRefineryBlock(m){
+  const systems=REFINERY_BONUS_REGISTRY[m.name]||REFINERY_BONUS_REGISTRY[m.displayName]||null;
+  const rows=[];
+  if(systems){
+    Object.entries(systems).forEach(([code,data])=>{
+      const positives=(data&&Array.isArray(data.positive)?data.positive:[]).filter(x=>Number(x.bonus)>0);
+      if(!positives.length) return;
+      const maxBonus=Math.max(...positives.map(x=>Number(x.bonus)||0));
+      const best=positives.filter(x=>(Number(x.bonus)||0)===maxBonus);
+      rows.push(`<div class="refinery-system"><div class="refinery-system-name">${esc(REFINERY_SYSTEM_LABELS[code]||code)}</div><div class="refinery-system-values">${best.map(x=>`${esc(x.refinery)} <span class="refinery-bonus">${fmtBonus(Number(x.bonus)||0)}</span>`).join('<span class="refinery-sep">·</span>')}</div></div>`);
+    });
+  }
+  if(!rows.length) return `<p class="refinery-empty">${esc(t("noKnownBonus"))}</p>`;
+  return `<div class="refinery-systems">${rows.join('')}</div>`;
+}
+
+const I18N={
+  hu:{radarOrder:"Radar sorrend",lowMode:"Alacsony Quality · Q500 / Integrity",highMode:"Magas Quality · Q800 minimum / Q900+ funkcionális",craftOnly:"Csak crafting anyagok",allRadar:"Minden radaranyag",clear:"Kiemelés törlése",sources:"Adatforrások",bpSource:"BP · Star Citizen Wiki API",refinerySource:"Finomító · UEX",qualitySource:"Anyagminőség · SCMDB",bpTitle:"Blueprint és komponens adatok",refineryTitle:"Finomító bónusz adatok",qualityTitle:"Anyagminőség és lelőhely adatok",material:"Anyag",bestQualityLocations:"Legjobb Quality lelőhelyek",lowHeading:"Alacsony Quality · Q500 / Integrity",highHeading:"Magas Quality · Q800 minimum / Q900+ funkcionális",refineryBonus:"Finomító bónusz",noLowUsage:"Nincs alacsony Quality / Q500 felhasználás.",noHighUsage:"Nincs magas Quality felhasználás.",noKnownBonus:"Nincs ismert bónusz.",possibleSignals:"lehetséges jel",base:"alap",noRadar:"Nincs radarérték a referencia-képen.",lowBanner:"Alacsony Quality nézet: HP / Integrity célú, illetve Q500-as és magasabb minőségből nem profitáló mining receptek, radar-sorrendben.",highBanner:"Magas Quality nézet: a Q800 minimumot kérő receptek és minden Quality-vel skálázódó funkcionális alkatrész egy csoportban. A funkcionális alkatrészeknél Q900+ a cél.",matches:"{count} találat",pendingUrl:"A recept ellenőrzött, de az exact item URL még nincs beégetve — nem találok ki linket.",footerData:"Adatok:",footerDisclaimer:"Nem hivatalos Star Citizen rajongói segédoldal, nem áll kapcsolatban a Cloud Imperium Grouppal. A harmadik féltől származó tartalmak és játékadatok jogai a megfelelő jogosultakat illetik.",footerOfficial:"Hivatalos Star Citizen oldal",targetMining:"Célzott bányászat",targetHint:"Jelöld be az anyagokat közvetlenül a nagy radarlistában. Legalább 2 anyag kell a közös lelőhely kereséséhez.",targetAllSystems:"Minden rendszer",targetChooseMaterial:"Anyag kiválasztása…",targetAdd:"Anyag hozzáadása",targetRadarFocus:"Csak ezeket a radaron",targetRadarReset:"Teljes radar visszaállítása",targetSelected:"Kiválasztva",targetCommon:"Legjobb közös lelőhelyek",targetChooseTwo:"Válassz legalább 2 anyagot a közös lelőhelyek kereséséhez.",targetNoCommon:"A kiválasztott anyagokhoz nincs legalább 2 anyagot lefedő közös top Quality lelőhely ebben a snapshotban.",targetMatch:"{count}/{total} anyag",targetRemove:"Eltávolítás",targetToggleMaterial:"Célzott kereséshez kijelölés",aaronHaloGuide:"Aaron Halo útvonal-segéd megnyitása"},
+  en:{radarOrder:"Radar order",lowMode:"Low Quality · Q500 / Integrity",highMode:"High Quality · Q800 minimum / Q900+ functional",craftOnly:"Crafting materials only",allRadar:"All radar materials",clear:"Clear highlights",sources:"Data sources",bpSource:"BP · Star Citizen Wiki API",refinerySource:"Refinery · UEX",qualitySource:"Material Quality · SCMDB",bpTitle:"Blueprint and component data",refineryTitle:"Refinery bonus data",qualityTitle:"Material quality and location data",material:"Material",bestQualityLocations:"Best Quality Locations",lowHeading:"Low Quality · Q500 / Integrity",highHeading:"High Quality · Q800 minimum / Q900+ functional",refineryBonus:"Refinery Bonus",noLowUsage:"No low Quality / Q500 usage.",noHighUsage:"No high Quality usage.",noKnownBonus:"No known bonus.",possibleSignals:"possible signatures",base:"base",noRadar:"No radar value in the reference image.",lowBanner:"Low Quality view: HP / Integrity-oriented recipes and mining recipes that do not benefit from material quality above Q500, in radar order.",highBanner:"High Quality view: recipes requiring a Q800 minimum and all functional parts that scale with Quality. For functional parts, Q900+ is the target.",matches:"{count} matches",pendingUrl:"The recipe is verified, but the exact item URL is not embedded yet — no link is guessed.",footerData:"Data:",footerDisclaimer:"Unofficial Star Citizen fan-made helper. It is not affiliated with Cloud Imperium Group. Third-party content and game data remain the property of their respective rights holders.",footerOfficial:"Official Star Citizen website",targetMining:"Target Mining",targetHint:"Tick materials directly in the main radar list. Select at least 2 materials to search for common locations.",targetAllSystems:"All systems",targetChooseMaterial:"Choose material…",targetAdd:"Add material",targetRadarFocus:"Show only these on radar",targetRadarReset:"Restore full radar",targetSelected:"Selected",targetCommon:"Best common locations",targetChooseTwo:"Select at least 2 materials to search for common locations.",targetNoCommon:"No common top-Quality location covering at least 2 of the selected materials exists in this snapshot.",targetMatch:"{count}/{total} materials",targetRemove:"Remove",targetToggleMaterial:"Select for Target Mining",aaronHaloGuide:"Open Aaron Halo route guide"}
+};
+let currentLang=(localStorage.getItem("spgMaterialRadarLanguage")==="en")?"en":"hu";
+function t(key){return (I18N[currentLang]&&I18N[currentLang][key])||I18N.hu[key]||key}
+function tCount(key,count){return t(key).replace("{count}",String(count))}
+function localizeUsageText(value){let s=String(value||"");if(currentLang!=="en")return s;return s.replaceAll("Q900+ ajánlott","Q900+ recommended").replaceAll("Q800 minimum · fölötte nincs extra hatás","Q800 minimum · no extra effect above Q800").replaceAll("alacsony Quality csoport","low Quality group")}
+function localizeQualityNote(value){const s=String(value||"");if(currentLang!=="en"||!s)return s;const n={"Hurston az egyetlen első hely, ezért a felhasználói szabály szerint az első és a következő legjobb Quality tier is megjelenik.":"Hurston is the only first-place location, so under the user rule both the top and the next-best Quality tier are shown.","A Nyx / Breaker Stations Interior 75.0% kártyán a forrás figyelmeztetése: „Based on personal guesstimate, not game data”.":"For the Nyx / Breaker Stations Interior 75.0% card, the source warns: “Based on personal guesstimate, not game data”.","A forráskártya típusa Event.":"The source card type is Event.","A forráskártya típusa Event. A Célzott bányászat miatt a második legjobb Nyx tier is megmarad: Glaciem Ring és Keeger Belt ≤0.3%.":"The source card type is Event. For Target Mining, the second-best Nyx tier is also retained: Glaciem Ring and Keeger Belt ≤0.3%.","A forrás figyelmeztetése: „Based on personal guesstimate, not game data”.":"Source warning: “Based on personal guesstimate, not game data”."};return n[s]||s}
+function localizeGradeNote(value){const s=String(value||"");if(currentLang!=="en"||!s)return s;const n={"Az API felső Fitment mezője A, a Description Data egyes verziókban B-t jelez.":"The API top-level Fitment field is A, while Description Data reports B in some versions.","Az API felső Fitment mezője A, a Description Data C-t jelez.":"The API top-level Fitment field is A, while Description Data reports C.","Az API felső Fitment mezője A, a Description Data B-t jelez.":"The API top-level Fitment field is A, while Description Data reports B."};return n[s]||s}
+function coverageText(family){const v=COMPONENT_REGISTRY_COVERAGE[family]||"unmapped";const hu={"verified-project-set":"Ellenőrzött projekt-registry. A lista csak az itt beágyazott, blueprinttel párosított komponenseket állítja biztosnak.","verified-material-slot-coverage":"API-val ellenőrzött lefedettség: ehhez a V25-ben szereplő material + blueprint mező pároshoz van konkrét komponens-találat.","live-complete-ship-weapon-registry":"StarCitizenWiki 4.10 LIVE Ship Weapon registry: az S1–S6 craftolható WeaponGun blueprint-ek méretenként külön rekordként vannak betöltve.","live-complete-quantum-drive-registry":"StarCitizenWiki 4.10 LIVE Quantum Drive audit: az aktuális 57 creation blueprint külön rekordként van beágyazva, beleértve az S1–S4 meghajtókat és a material + slot kapcsolatokat.","current-craftable-pattern-registry":"A jelenlegi craftolható mining laser receptmintára előkészített registry.","tracked-current-recipes":"A jelenleg külön ellenőrzött mining receptek registryje.","prepared-no-complete-registry":"A funkció elő van készítve, de ehhez a családhoz még nincs teljes, API-ból újragenerált konkrét komponens-registry.","verified-partial-set":"Részben ellenőrzött komponens-registry. A jelenleg beágyazott konkrét komponensek blueprinttel és API-linkkel ellenőrzöttek, de a teljes család még nincs lezárva.","unmapped":"Ehhez a családhoz még nincs coverage-bejegyzés."};const en={"verified-project-set":"Verified project registry. Only the embedded components paired with blueprints are treated as confirmed here.","verified-material-slot-coverage":"API-verified coverage: a concrete component match exists for this material + blueprint slot pair used by the current project.","live-complete-ship-weapon-registry":"StarCitizenWiki 4.10 LIVE Ship Weapon registry: craftable S1–S6 WeaponGun blueprints are loaded as separate records by size.","current-craftable-pattern-registry":"Registry prepared for the current craftable mining laser recipe pattern.","tracked-current-recipes":"Registry of the currently tracked and separately verified mining recipes.","prepared-no-complete-registry":"The feature is prepared, but this family does not yet have a complete concrete component registry regenerated from the API.","verified-partial-set":"Partially verified component registry. The embedded components are blueprint- and API-link-verified, but the full family is not yet closed out.","unmapped":"No coverage entry exists for this family yet."};return (currentLang==="en"?en:hu)[v]||v}
+function applyStaticTranslations(){document.documentElement.lang=currentLang;const l=document.getElementById("language");if(l)l.value=currentLang;document.getElementById("modeRadar").textContent=t("radarOrder");document.getElementById("modeQ500").textContent=t("lowMode");document.getElementById("modeQHigh").textContent=t("highMode");const c=document.getElementById("craftOnly");if(c)c.textContent=state.craftOnly?t("craftOnly"):t("allRadar");document.getElementById("clear").textContent=t("clear");const ds=document.getElementById("dataSources");if(ds)ds.setAttribute("aria-label",t("sources"));document.getElementById("dataSourcesLabel").textContent=t("sources");const bp=document.getElementById("sourceBp");bp.textContent=t("bpSource");bp.title=t("bpTitle");const rf=document.getElementById("sourceRefinery");rf.textContent=t("refinerySource");rf.title=t("refineryTitle");const q=document.getElementById("sourceQuality");q.textContent=t("qualitySource");q.title=t("qualityTitle");document.getElementById("materialHead").textContent=t("material");document.getElementById("footerDataLabel").textContent=t("footerData");document.getElementById("footerDisclaimer").textContent=t("footerDisclaimer");document.getElementById("footerOfficial").textContent=t("footerOfficial");const tm=document.getElementById("targetMiningToggle");if(tm)tm.textContent=t("targetMining");const tt=document.getElementById("targetMiningTitle");if(tt)tt.textContent=t("targetMining");const th=document.getElementById("targetMiningHint");if(th)th.textContent=t("targetHint");const ta=document.getElementById("targetAddMaterial");if(ta)ta.textContent=t("targetAdd");const tf=document.getElementById("targetRadarFocus");if(tf)tf.textContent=state.radarFocus?t("targetRadarReset"):t("targetRadarFocus");const ts=document.getElementById("targetSystem");if(ts&&ts.options[0])ts.options[0].textContent=t("targetAllSystems")}
+
+const MAX=30000;
+const START_PCT=8; // minden sor első radarjele ugyaninnen indul
+const END_PCT=98;
+const MAX_COLS=10; // a legtöbb jel 10 oszlopot kap fixen
+const RARITY={
+  legendary:{color:"#ffad19",rank:1}, epic:{color:"#c75cff",rank:2},
+  rare:{color:"#2b9cff",rank:3}, uncommon:{color:"#2bd1b1",rank:4},
+  common:{color:"#8c9aaa",rank:5}, roc:{color:"#66dfa9",rank:6},
+  fps:{color:"#71badc",rank:7}, unknown:{color:"#7d8794",rank:8}
+};
+const state={mode:"radar",craftOnly:true,selected:new Set(),targetMaterials:new Set(),targetSystem:"all",targetOpen:false,radarFocus:false};
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}
+function fmt(n){return new Intl.NumberFormat(currentLang==="en"?"en-US":"hu-HU",{maximumFractionDigits:0}).format(n)}
+function radarVals(m){return m.radarBase&&m.radarCount?Array.from({length:m.radarCount},(_,i)=>m.radarBase*(i+1)):[]}
+function hasCraft(m){return m.q500.length||m.qHigh.length}
+function color(m){return (RARITY[m.rarity]||RARITY.unknown).color}
+function scale(){
+  const root=document.getElementById("scale");
+  root.innerHTML=[5000,10000,15000,20000,25000,30000].map(v=>`<span class="tick" style="left:${v/MAX*100}%">${v/1000}k</span>`).join("");
+}
+function sortRadar(a,b){
+  return (a.order??999)-(b.order??999) || a.displayName.localeCompare(b.displayName,"hu");
+}
+
+const KNOWN_FAMILIES=["Shield Generator","Quantum Drive","Power Plant","Mining Module","Mining Laser","Ship Weapon","Ore Pod","Cooler","Radar"];
+let popoverCloseTimer=null;
+
+function parseUsage(usage){
+  const parts=String(usage).split("→");
+  const left=(parts.shift()||"").trim();
+  const right=parts.join("→").trim();
+  const family=KNOWN_FAMILIES.find(f=>left===f||left.startsWith(f+" "))||left;
+  const suffix=left.slice(family.length);
+  const mainSlot=right.split("·")[0].trim();
+  const slots=mainSlot.split("/").map(s=>s.trim()).filter(Boolean);
+  const paren=(left.match(/\((.*?)\)/)||[])[1]||"";
+  const variantTerms=paren.split("/").map(s=>s.trim()).filter(Boolean);
+  return {family,left,right,suffix,mainSlot,slots,variantTerms};
+}
+function variantMatches(c,terms){
+  if(!terms.length) return true;
+  const hay=[c.name,...(c.tags||[])].join(" ").toLowerCase();
+  return terms.some(t=>hay.includes(t.toLowerCase()));
+}
+function componentMatchesUsage(c,material,usage,bucket){
+  const p=parseUsage(usage);
+  if(c.family!==p.family) return false;
+  if((p.family==="Mining Module"||p.family==="Ore Pod") && c.qualityBucket && c.qualityBucket!==bucket) return false;
+  if(!variantMatches(c,p.variantTerms)) return false;
+  return p.slots.some(slot=>{ const v=c.recipe&&c.recipe[slot]; return Array.isArray(v)?v.includes(material):v===material; });
+}
+function findComponentsForUsage(material,usage,bucket){
+  return COMPONENT_REGISTRY
+    .filter(c=>componentMatchesUsage(c,material,usage,bucket))
+    .sort((a,b)=>{
+      const sa=Number(String(a.size||"").replace(/\D/g,""))||99;
+      const sb=Number(String(b.size||"").replace(/\D/g,""))||99;
+      return sa-sb || String(a.name).localeCompare(String(b.name),"hu");
+    });
+}
+function renderUsage(m,usage,bucket){
+  const p=parseUsage(usage);
+  if(!KNOWN_FAMILIES.includes(p.family)) return esc(usage);
+  const family=`<button type="button" class="usage-family" data-material="${esc(m.name)}" data-usage="${esc(usage)}" data-bucket="${bucket}" aria-haspopup="dialog">${esc(p.family)}</button>`;
+  return family+esc(localizeUsageText(p.suffix))+(p.right?` → ${esc(localizeUsageText(p.right))}`:"");
+}
+function renderUsageList(m,arr,bucket,emptyText){
+  return arr.length?`<ul>${arr.map(x=>`<li>${renderUsage(m,x,bucket)}</li>`).join("")}</ul>`:`<p class="empty-note">${esc(emptyText)}</p>`;
+}
+
+function componentCard(c){
+  const name=c.url
+    ? `<a class="component-name" href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">${esc(c.name)}</a>`
+    : `<span class="component-name-static">${esc(c.name)}</span>`;
+  const meta=[c.size,c.class,c.grade&&c.grade!=="—"?`Grade ${c.grade}`:null].filter(Boolean)
+    .map(x=>`<span class="component-chip">${esc(x)}</span>`).join("");
+  const note=c.gradeNote?`<div class="component-note">${esc(localizeGradeNote(c.gradeNote))}</div>`:"";
+  const pending=!c.url?`<div class="component-link-pending">${esc(t("pendingUrl"))}</div>`:"";
+  return `<div class="component-item">${name}<div class="component-meta">${meta}</div>${c.manufacturer?`<div class="component-manufacturer">${esc(c.manufacturer)}</div>`:""}${note}${pending}</div>`;
+}
+function positionPopover(trigger){
+  const pop=document.getElementById("componentPopover");
+  if(!pop||!trigger) return;
+  const r=trigger.getBoundingClientRect();
+  const margin=8;
+  const maxLeft=Math.max(margin,window.innerWidth-pop.offsetWidth-margin);
+  let left=Math.min(maxLeft,Math.max(margin,r.left));
+  let top=r.bottom+7;
+  if(top+pop.offsetHeight>window.innerHeight-margin) top=Math.max(margin,r.top-pop.offsetHeight-7);
+  pop.style.left=`${left}px`;pop.style.top=`${top}px`;
+}
+async function openComponentPopover(trigger){
+  clearTimeout(popoverCloseTimer);
+  const pop=document.getElementById("componentPopover");
+  if(!pop) return;
+  const material=trigger.dataset.material||"";
+  const usage=trigger.dataset.usage||"";
+  const bucket=trigger.dataset.bucket||"low";
+  const p=parseUsage(usage);
+  if(p.family==="Ship Weapon") await ensureShipWeaponRegistryLoaded();
+  const matches=findComponentsForUsage(material,usage,bucket);
+  const title=`${material} · ${p.family}${p.mainSlot?` → ${p.mainSlot}`:""}`;
+  if(!matches.length){ closeComponentPopover(); return; }
+  pop.innerHTML=`<div class="component-popover-head"><div class="component-popover-title">${esc(title)}</div><div class="component-popover-count">${esc(tCount("matches",matches.length))}</div></div>`+
+    `<div class="component-list">${matches.map(componentCard).join("")}</div>`+
+    `<div class="component-coverage">${esc(coverageText(p.family))}</div>`;
+  pop.classList.add("open");pop.setAttribute("aria-hidden","false");
+  pop.dataset.ownerId=trigger.dataset.popId||"";
+  requestAnimationFrame(()=>positionPopover(trigger));
+}
+function closeComponentPopover(){
+  const pop=document.getElementById("componentPopover");
+  if(!pop)return;pop.classList.remove("open");pop.setAttribute("aria-hidden","true");pop.innerHTML="";
+}
+function schedulePopoverClose(){clearTimeout(popoverCloseTimer);popoverCloseTimer=setTimeout(closeComponentPopover,140)}
+function bindUsageInteractions(){
+  document.querySelectorAll(".usage-family").forEach((btn,i)=>{
+    btn.dataset.popId=`usage-${i}`;
+    btn.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();openComponentPopover(btn)});
+    btn.addEventListener("mouseenter",()=>openComponentPopover(btn));
+    btn.addEventListener("mouseleave",schedulePopoverClose);
+    btn.addEventListener("focus",()=>openComponentPopover(btn));
+  });
+}
+
+function row(m){
+  const c=color(m), vals=radarVals(m), selected=state.selected.has(m.name);
+  const targetChosen=state.targetMaterials.has(m.name);
+  const targetFocusPreview=state.radarFocus && targetChosen && !selected;
+  const targetEligible=!!targetQualityDataForMaterial(m.name);
+  const targetCheck=(state.targetOpen&&targetEligible)?`<input class="target-material-check" type="checkbox" data-target-material="${esc(m.name)}" ${targetChosen?"checked":""} aria-label="${esc(t("targetToggleMaterial"))}: ${esc(m.displayName||m.name)}" title="${esc(t("targetToggleMaterial"))}">`:"";
+  let filtered=true;
+  if(state.mode==="q500") filtered=m.q500.length>0;
+  if(state.mode==="qhigh") filtered=m.qHigh.length>0;
+  if(!filtered) return "";
+  const line=vals.length?`<span class="sig-line" data-first="0" data-last="${Math.max(0,vals.length-1)}"></span>`:"";
+  const chips=vals.map((v,i)=>{const valueText=fmt(v);const digits=String(Math.abs(Math.trunc(Number(v)||0))).length;const charCount=valueText.length;const extra=digits>=5?Math.min(34,16+Math.max(0,charCount-6)*6):0;return `<span class="sig-chip ${digits>=5?"sig-chip-long":""}" data-col="${i}" style="--sig-long-extra:${extra}px">${valueText}</span>`}).join("");
+  const q500=renderUsageList(m,m.q500,"low",t("noLowUsage"));
+  const qh=renderUsageList(m,m.qHigh,"high",t("noHighUsage"));
+  const radarText=vals.length?`${m.mining} · ${m.radarCount} ${t("possibleSignals")} · ${t("base")} ${fmt(m.radarBase)}`:t("noRadar");
+  const refineryHtml=renderRefineryBlock(m);
+  const qualityLocationHtml=renderQualityLocationBlock(m);
+  return `<div class="radar-row ${selected?"selected":""} ${targetChosen?"target-chosen":""} ${targetFocusPreview?"target-focus-preview":""}" data-name="${esc(m.name)}" style="--c:${c}">
+    <div class="material-label">${targetCheck}<span class="material-label-text">${esc(m.displayName||m.name)}</span></div>
+    <div class="track">${line}${chips}</div>
+    <div class="details">
+      <div class="selected-material-inline">${esc(m.displayName||m.name)}</div>
+      ${qualityLocationHtml}
+      <div class="details-grid">
+        <div class="detail"><h3>${esc(t("lowHeading"))}</h3>${q500}</div>
+        <div class="detail"><h3>${esc(t("highHeading"))}</h3>${qh}</div>
+        <div class="detail radar-detail"><h3>Radar</h3><p>${radarText}</p></div>
+        <div class="detail refinery-detail"><h3>${esc(t("refineryBonus"))}</h3>${refineryHtml}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function layoutRadar(){
+  const tracks=[...document.querySelectorAll(".track")];
+  if(!tracks.length) return;
+
+  const firstTrackWidth=tracks[0].clientWidth;
+  if(firstTrackWidth<=0) return;
+
+  const cols=MAX_COLS;
+  const approxSpacing=firstTrackWidth/(cols-1);
+  const dense=firstTrackWidth<520;
+  const ultraDense=firstTrackWidth<390;
+
+  let chipW,chipH,chipFont,focusW,focusH,focusFont,selW,selH,selFont;
+  let mobileSafeW,mobileSafeH,mobileSafeFont;
+
+  if(!dense){
+    chipW=Math.max(38,Math.min(92,approxSpacing*0.56));
+    chipH=Math.max(20,Math.min(34,chipW*0.34));
+    chipFont=Math.max(9.5,Math.min(15.5,chipW*0.155));
+
+    focusW=Math.max(chipW+3,Math.min(94,approxSpacing*0.58));
+    focusH=Math.max(chipH+4,Math.min(36,focusW*0.34));
+    focusFont=Math.max(chipFont+2.2,Math.min(17,focusW*0.18,focusH*0.58));
+
+    selW=Math.max(chipW+4,Math.min(106,approxSpacing*0.60));
+    selH=Math.max(chipH+6,Math.min(40,selW*0.34));
+    selFont=Math.max(chipFont+4,Math.min(26, selW*0.25, selH*0.68));
+  } else {
+    /* Mobile only: keep the first capsules readable and filled better.
+       Longer rows are compressed later by the per-row positioning logic. */
+    const safeSpacing=Math.max(24,approxSpacing);
+    chipW=Math.max(36,Math.min(48,safeSpacing*1.22));
+    chipH=Math.max(22,Math.min(27,chipW*0.58));
+    chipFont=Math.max(10.2,Math.min(12.9,chipW*0.275));
+
+    focusW=chipW;
+    focusH=chipH;
+    focusFont=chipFont;
+
+    selW=chipW;
+    selH=chipH;
+    selFont=chipFont;
+  }
+
+  mobileSafeW=dense?chipW:Math.max(30,Math.min(42,approxSpacing*0.52));
+  mobileSafeH=dense?chipH:Math.max(19,Math.min(26,mobileSafeW*0.62));
+  mobileSafeFont=dense?chipFont:Math.max(8.5,Math.min(11.5,mobileSafeW*0.25));
+
+  document.documentElement.style.setProperty("--chip-w",`${chipW}px`);
+  document.documentElement.style.setProperty("--chip-h",`${chipH}px`);
+  document.documentElement.style.setProperty("--chip-font",`${chipFont}px`);
+  document.documentElement.style.setProperty("--chip-w-focus",`${focusW}px`);
+  document.documentElement.style.setProperty("--chip-h-focus",`${focusH}px`);
+  document.documentElement.style.setProperty("--chip-font-focus",`${focusFont}px`);
+  document.documentElement.style.setProperty("--chip-w-mobile-safe",`${mobileSafeW}px`);
+  document.documentElement.style.setProperty("--chip-h-mobile-safe",`${mobileSafeH}px`);
+  document.documentElement.style.setProperty("--chip-font-mobile-safe",`${mobileSafeFont}px`);
+  document.documentElement.style.setProperty("--chip-w-selected",`${selW}px`);
+  document.documentElement.style.setProperty("--chip-h-selected",`${selH}px`);
+  document.documentElement.style.setProperty("--chip-font-selected",`${selFont}px`);
+
+  tracks.forEach(track=>{
+    const width=track.clientWidth;
+    if(width<=0) return;
+    const chips=[...track.querySelectorAll(".sig-chip")];
+    const centers=[];
+    const useDense=width<520;
+    const rowEl=track.closest(".radar-row");
+    const material=rowEl?MATERIALS.find(m=>m.name===rowEl.dataset.name):null;
+    const rarity=material?material.rarity:"";
+    const twoRowMobile=useDense && ["common","roc","fps"].includes(rarity) && chips.length>=5;
+    if(rowEl) rowEl.classList.toggle("mobile-two-row",twoRowMobile);
+
+    const localEdge=useDense ? Math.max(selW/2+6,Math.min(52,width*0.06)) : Math.max(selW/2+8,Math.min(78,width*0.055));
+    const usable=Math.max(0,width-localEdge*2);
+    const step=cols>1?usable/(cols-1):0;
+    const count=chips.length;
+
+    /* Clear any previous mobile two-row inline top values after resize/state changes. */
+    chips.forEach(chip=>{chip.style.top="";chip.style.width="";chip.style.fontSize=""});
+
+    if(useDense && twoRowMobile){
+      const widths=chips.map(chip=>chip.offsetWidth||mobileSafeW);
+      const baseGap=5;
+
+      /* Choose the split that produces the most balanced two rows for the
+         CURRENT mobile track width and the REAL rendered capsule widths. */
+      let split=1;
+      let bestScore=Infinity;
+      for(let s=1;s<count;s++){
+        const w1=widths.slice(0,s).reduce((a,b)=>a+b,0)+baseGap*Math.max(0,s-1);
+        const w2=widths.slice(s).reduce((a,b)=>a+b,0)+baseGap*Math.max(0,count-s-1);
+        const overflow=Math.max(0,w1-(width-4))+Math.max(0,w2-(width-4));
+        const balance=Math.abs(w1-w2)*0.12;
+        const countBalance=Math.abs(s-(count-s))*2;
+        const score=overflow*1000+balance+countBalance;
+        if(score<bestScore){bestScore=score;split=s;}
+      }
+
+      const rows=[chips.slice(0,split),chips.slice(split)];
+      const rowWidths=[widths.slice(0,split),widths.slice(split)];
+      const yPositions=["25%","75%"];
+
+      rows.forEach((rowChips,rowIndex)=>{
+        const ws=rowWidths[rowIndex];
+        const n=rowChips.length;
+        if(!n) return;
+        let effectiveWidths=[...ws];
+        const rawChipTotal=effectiveWidths.reduce((a,b)=>a+b,0);
+        const maxChipTotal=Math.max(1,width-4);
+        if(rawChipTotal>maxChipTotal){
+          const scale=maxChipTotal/rawChipTotal;
+          effectiveWidths=effectiveWidths.map(w=>w*scale);
+          rowChips.forEach((chip,i)=>{
+            const computed=parseFloat(getComputedStyle(chip).fontSize)||mobileSafeFont;
+            chip.style.width=`${effectiveWidths[i]}px`;
+            chip.style.fontSize=`${Math.max(7.8,computed*scale)}px`;
+          });
+        }
+        const chipTotal=effectiveWidths.reduce((a,b)=>a+b,0);
+        const availableGap=n>1?Math.max(0,(width-chipTotal-4)/(n-1)):0;
+        const gap=Math.min(12,availableGap);
+        const total=chipTotal+gap*Math.max(0,n-1);
+        /* Mobile two-row Common / ROC / FPS rows are left-aligned by request. */
+        let cursor=2;
+        rowChips.forEach((chip,i)=>{
+          const w=effectiveWidths[i];
+          const center=cursor+w/2;
+          chip.style.left=`${center}px`;
+          chip.style.top=yPositions[rowIndex];
+          centers.push(center);
+          cursor+=w+gap;
+        });
+      });
+    } else if(useDense){
+      let widths=chips.map(chip=>chip.offsetWidth||mobileSafeW);
+      let gap=5;
+      const maxTotal=Math.max(1,width-4);
+      const rawTotal=widths.reduce((a,b)=>a+b,0)+gap*Math.max(0,count-1);
+      if(rawTotal>maxTotal){
+        const scale=Math.max(0.72,(maxTotal-gap*Math.max(0,count-1))/Math.max(1,widths.reduce((a,b)=>a+b,0)));
+        widths=widths.map(w=>w*scale);
+        chips.forEach((chip,i)=>{
+          const computed=parseFloat(getComputedStyle(chip).fontSize)||mobileSafeFont;
+          chip.style.width=`${widths[i]}px`;
+          chip.style.fontSize=`${Math.max(7.8,computed*scale)}px`;
+        });
+        const fitted=widths.reduce((a,b)=>a+b,0)+gap*Math.max(0,count-1);
+        if(fitted>maxTotal && count>1) gap=Math.max(0,(maxTotal-widths.reduce((a,b)=>a+b,0))/(count-1));
+      }
+      const proposed=[];
+      let prev=null;
+
+      /* Legendary/Epic/Rare/Uncommon mobile rows stay in ONE row.
+         Real capsule widths are respected, so blue and green rows cannot overlap. */
+      chips.forEach((chip,idx)=>{
+        const col=Math.max(0,Math.min(cols-1,Number(chip.dataset.col||0)));
+        const desired=cols>1?(width*(col/(cols-1))):(width/2);
+        const half=widths[idx]/2;
+        let center=Math.max(half+2,Math.min(width-half-2,desired));
+        if(prev!==null){
+          const minCenter=prev+(widths[idx-1]/2)+half+gap;
+          center=Math.max(center,minCenter);
+        }
+        proposed.push(center);
+        prev=center;
+      });
+
+      if(proposed.length){
+        const last=proposed.length-1;
+        const lastMax=width-(widths[last]/2)-2;
+        const overflow=Math.max(0,proposed[last]-lastMax);
+        if(overflow>0){
+          const firstMin=(widths[0]/2)+2;
+          const availableShift=Math.max(0,proposed[0]-firstMin);
+          const shift=Math.min(overflow,availableShift);
+          for(let i=0;i<proposed.length;i++) proposed[i]-=shift;
+        }
+      }
+
+      proposed.forEach((center,idx)=>{
+        chips[idx].style.left=`${center}px`;
+        centers.push(center);
+      });
+    } else {
+      chips.forEach(chip=>{
+        const col=Math.max(0,Math.min(cols-1,Number(chip.dataset.col||0)));
+        const desired=localEdge+step*col;
+        const half=(chip.offsetWidth/2)+3;
+        const clamped=Math.max(half, Math.min(width-half, desired));
+        chip.style.left=`${clamped}px`;
+        centers.push(clamped);
+      });
+    }
+
+    const line=track.querySelector(".sig-line");
+    if(line){
+      if(twoRowMobile){
+        line.style.left="0px";
+        line.style.width="0px";
+      }else{
+        const firstCenter=centers.length ? centers[0] : (useDense?0:localEdge);
+        const lastCenter=centers.length ? centers[centers.length-1] : (useDense?0:localEdge);
+        line.style.left=`${firstCenter}px`;
+        line.style.width=`${Math.max(0,lastCenter-firstCenter)}px`;
+      }
+    }
+  });
+}
+
+
+
+function targetMaterialDisplayName(name){
+  const m=MATERIALS.find(x=>x.name===name);
+  return m?(m.displayName||m.name):name;
+}
+function targetQualityDataForMaterial(name){
+  const m=MATERIALS.find(x=>x.name===name);
+  if(!m) return null;
+  const keys=qualityLookupKeys(m);
+  for(const key of keys) if(QUALITY_LOCATION_REGISTRY[key]) return QUALITY_LOCATION_REGISTRY[key];
+  return null;
+}
+function targetChanceNumber(value){
+  const n=parseFloat(String(value||"").replace(/[^0-9.,-]/g,"").replace(",","."));
+  return Number.isFinite(n)?n:0;
+}
+function targetEntryTiers(entry){
+  if(!entry) return [];
+  if(Array.isArray(entry.tiers)&&entry.tiers.length){
+    return entry.tiers.map(t=>({chance:t.chance||entry.chance||"",locations:Array.isArray(t.locations)?t.locations:[]}));
+  }
+  return [{chance:entry.chance||"",locations:Array.isArray(entry.locations)?entry.locations:[]}];
+}
+function buildTargetMiningResults(){
+  const chosen=[...state.targetMaterials];
+  if(chosen.length<2) return [];
+  const systems=state.targetSystem==="all"?["Stanton","Pyro","Nyx"]:[state.targetSystem];
+  const results=[];
+  systems.forEach(system=>{
+    const byLocation=new Map();
+    chosen.forEach(material=>{
+      const data=targetQualityDataForMaterial(material);
+      const entry=data&&data[system];
+      targetEntryTiers(entry).forEach(tier=>{
+        tier.locations.forEach(location=>{
+          const key=String(location).trim().toLocaleLowerCase("en");
+          if(!key) return;
+          if(!byLocation.has(key)) byLocation.set(key,{system,location:String(location).trim(),matches:new Map()});
+          const row=byLocation.get(key);
+          const previous=row.matches.get(material);
+          const chance=tier.chance||"";
+          if(!previous || targetChanceNumber(chance)>targetChanceNumber(previous.chance)) row.matches.set(material,{material,chance});
+        });
+      });
+    });
+    byLocation.forEach(row=>{
+      if(row.matches.size<2) return;
+      const matches=[...row.matches.values()];
+      const avg=matches.reduce((s,x)=>s+targetChanceNumber(x.chance),0)/matches.length;
+      results.push({...row,matches,coverage:matches.length,averageChance:avg});
+    });
+  });
+  return results.sort((a,b)=>b.coverage-a.coverage || b.averageChance-a.averageChance || ["Stanton","Pyro","Nyx"].indexOf(a.system)-["Stanton","Pyro","Nyx"].indexOf(b.system) || a.location.localeCompare(b.location,"hu"));
+}
+function populateTargetMaterialPicker(){
+  const picker=document.getElementById("targetMaterialPicker");
+  if(!picker) return;
+  const old=picker.value;
+  const options=MATERIALS.slice().sort((a,b)=>(a.displayName||a.name).localeCompare(b.displayName||b.name,"hu"))
+    .filter(m=>targetQualityDataForMaterial(m.name))
+    .map(m=>`<option value="${esc(m.name)}"${state.targetMaterials.has(m.name)?" disabled":""}>${esc(m.displayName||m.name)}</option>`).join("");
+  picker.innerHTML=`<option value="">${esc(t("targetChooseMaterial"))}</option>${options}`;
+  if(old && [...picker.options].some(o=>o.value===old&&!o.disabled)) picker.value=old;
+}
+function updateTargetMiningUI(){
+  const panel=document.getElementById("targetMiningPanel");
+  const toggle=document.getElementById("targetMiningToggle");
+  if(panel){panel.classList.toggle("open",state.targetOpen);panel.setAttribute("aria-hidden",state.targetOpen?"false":"true")}
+  if(toggle){toggle.classList.toggle("active",state.targetOpen);toggle.setAttribute("aria-expanded",state.targetOpen?"true":"false")}
+  const system=document.getElementById("targetSystem");
+  if(system) system.value=state.targetSystem;
+  populateTargetMaterialPicker();
+  const chips=document.getElementById("targetMaterialChips");
+  if(chips){
+    const chosen=[...state.targetMaterials];
+    chips.innerHTML=chosen.length?chosen.map(name=>`<span class="target-chip">${esc(targetMaterialDisplayName(name))}<button type="button" data-target-remove="${esc(name)}" aria-label="${esc(t("targetRemove"))}" title="${esc(t("targetRemove"))}">×</button></span>`).join(""):`<span class="target-mining-status">${esc(t("targetSelected"))}: 0</span>`;
+    chips.querySelectorAll("[data-target-remove]").forEach(btn=>btn.addEventListener("click",()=>{state.targetMaterials.delete(btn.dataset.targetRemove);if(!state.targetMaterials.size)state.radarFocus=false;updateTargetMiningUI();render()}));
+  }
+  const focus=document.getElementById("targetRadarFocus");
+  if(focus){focus.disabled=state.targetMaterials.size===0;focus.classList.toggle("active",state.radarFocus);focus.textContent=state.radarFocus?t("targetRadarReset"):t("targetRadarFocus")}
+  const results=document.getElementById("targetResults");
+  if(!results) return;
+  if(state.targetMaterials.size<2){results.innerHTML=`<div class="target-results-title">${esc(t("targetCommon"))}</div><div class="target-result-empty">${esc(t("targetChooseTwo"))}</div>`;return}
+  const found=buildTargetMiningResults().slice(0,8);
+  if(!found.length){results.innerHTML=`<div class="target-results-title">${esc(t("targetCommon"))}</div><div class="target-result-empty">${esc(t("targetNoCommon"))}</div>`;return}
+  const total=state.targetMaterials.size;
+  results.innerHTML=`<div class="target-results-title">${esc(t("targetCommon"))}</div><div class="target-result-list">${found.map(r=>{
+    const count=t("targetMatch").replace("{count}",r.coverage).replace("{total}",total);
+    const mats=r.matches.map(x=>`<strong>${esc(targetMaterialDisplayName(x.material))}</strong> ${esc(x.chance)}`).join(" · ");
+    return `<div class="target-result-row"><div class="target-result-system">${esc(r.system)}</div><div class="target-result-place">${renderQualityLocationName(r.location)}</div><div class="target-result-count">${esc(count)}</div><div class="target-result-materials">${mats}</div></div>`;
+  }).join("")}</div>`;
+}
+
+function fitSelectedLabels(){
+  document.querySelectorAll(".radar-row.selected .material-label, .radar-row.target-focus-preview .material-label").forEach(label=>{
+    const cellWidth=label.clientWidth;
+    if(!cellWidth) return;
+
+    let size=Math.min(22,Math.max(16,window.innerWidth*0.0115));
+    label.style.fontSize=`${size}px`;
+
+    const available=Math.max(68,cellWidth-12);
+    let guard=50;
+    while(label.scrollWidth>available && size>10.5 && guard-- > 0){
+      size-=0.5;
+      label.style.fontSize=`${size}px`;
+    }
+  });
+}
+
+function render(){
+  applyStaticTranslations();
+  state.mode=document.getElementById("mode").value;
+  let items=MATERIALS.slice().sort(sortRadar);
+  if(state.radarFocus&&state.targetMaterials.size) items=items.filter(m=>state.targetMaterials.has(m.name));
+  else if(state.craftOnly) items=items.filter(hasCraft);
+  const rows=[];
+  let prevRank=null;
+  for(const m of items){
+    const rank=(RARITY[m.rarity]||RARITY.unknown).rank;
+    const html=row(m);
+    if(!html) continue;
+    if(prevRank!==null && rank!==prevRank) rows.push(`<div class="group-gap"></div>`);
+    rows.push(html); prevRank=rank;
+  }
+  document.getElementById("rows").innerHTML=rows.join("");
+  const banner=document.getElementById("qualityBanner");
+  if(state.mode==="q500"){banner.textContent=t("lowBanner");banner.classList.add("show")}
+  else if(state.mode==="qhigh"){banner.textContent=t("highBanner");banner.classList.add("show")}
+  else banner.classList.remove("show");
+
+  document.querySelectorAll(".radar-row").forEach(el=>{
+    const toggle=()=>{const n=el.dataset.name;state.selected.has(n)?state.selected.delete(n):state.selected.add(n);render()};
+    el.addEventListener("click",e=>{if(e.target.closest(".usage-family,.component-popover,a,.target-material-check"))return;toggle()});
+  });
+  document.querySelectorAll(".target-material-check").forEach(box=>{
+    box.addEventListener("click",e=>e.stopPropagation());
+    box.addEventListener("change",()=>{
+      const name=box.dataset.targetMaterial;
+      if(box.checked) state.targetMaterials.add(name); else state.targetMaterials.delete(name);
+      if(!state.targetMaterials.size) state.radarFocus=false;
+      render();
+    });
+  });
+  bindUsageInteractions();
+  updateTargetMiningUI();
+  requestAnimationFrame(()=>{layoutRadar();fitSelectedLabels();});
+}
+
+document.getElementById("targetMiningToggle").addEventListener("click",()=>{state.targetOpen=!state.targetOpen;render()});
+document.getElementById("targetSystem").addEventListener("change",e=>{state.targetSystem=e.target.value||"all";updateTargetMiningUI()});
+document.getElementById("targetRadarFocus").addEventListener("click",()=>{
+  if(!state.targetMaterials.size) return;
+  state.radarFocus=!state.radarFocus;
+  if(state.radarFocus) state.selected=new Set([...state.selected].filter(x=>state.targetMaterials.has(x)));
+  render();
+});
+document.getElementById("mode").addEventListener("change",render);
+document.getElementById("craftOnly").addEventListener("click",()=>{
+  state.craftOnly=!state.craftOnly;
+  const b=document.getElementById("craftOnly");
+  b.classList.toggle("active",state.craftOnly);
+  b.textContent=state.craftOnly?t("craftOnly"):t("allRadar");
+  render();
+});
+document.getElementById("language").addEventListener("change",e=>{
+  currentLang=e.target.value==="en"?"en":"hu";
+  localStorage.setItem("spgMaterialRadarLanguage",currentLang);
+  closeComponentPopover();
+  render();
+});
+document.getElementById("clear").addEventListener("click",()=>{state.selected.clear();render()});
+let resizeTimer;
+window.addEventListener("resize",()=>{
+  closeComponentPopover();
+  clearTimeout(resizeTimer);
+  resizeTimer=setTimeout(()=>{layoutRadar();fitSelectedLabels();},60);
+});
+window.addEventListener("scroll",closeComponentPopover,{passive:true});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeComponentPopover()});
+document.addEventListener("click",e=>{if(!e.target.closest(".usage-family,.component-popover"))closeComponentPopover()});
+const componentPopover=document.getElementById("componentPopover");
+componentPopover.addEventListener("mouseenter",()=>clearTimeout(popoverCloseTimer));
+componentPopover.addEventListener("mouseleave",schedulePopoverClose);
+componentPopover.addEventListener("click",e=>e.stopPropagation());
+scale();render();
+ensureShipWeaponRegistryLoaded();
+</script>
+</body>
+</html>
