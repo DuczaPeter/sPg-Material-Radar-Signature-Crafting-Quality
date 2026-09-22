@@ -1,0 +1,35 @@
+{
+  "checked_at": "2026-09-22",
+  "project_repository": {
+    "repository": "DuczaPeter/sPg-Material-Radar-Signature-Crafting-Quality",
+    "branch": "main",
+    "commit": "47dcea643b11115ceac770bd8799d9f16c02fb0d",
+    "index_blob_sha": "6be14d6c299b8e9efc1dd48d183b2b0eebd9cb30",
+    "index_sha256": "28be33eae5f2b53f375e52003a7af282ff8b97243fdb14ee0b28b531be9402f4",
+    "status": "SOURCE VERIFIED"
+  },
+  "krovax_scmdb_data": {
+    "repository": "KrovaxCode/SCMDB_DATA",
+    "root_license_file_observed": false,
+    "latest_schema": 2,
+    "live_version": "4.10.1-live.12660092",
+    "generated_at": "2026-09-16T19:58:26Z",
+    "status": "SOURCE VERIFIED"
+  },
+  "star_citizen_wiki_api": {
+    "repository": "StarCitizenWiki/API",
+    "license": "MIT (API application source repository)",
+    "public_credit_guidance_observed": true,
+    "status": "SOURCE VERIFIED"
+  },
+  "rsi_fandom_guidance": {
+    "updated": "2026-09-02",
+    "fan_site_unofficial_notice_and_official_link_guidance_observed": true,
+    "status": "SOURCE VERIFIED"
+  },
+  "uex_terms": {
+    "personal_non_commercial_website_use_language_observed": true,
+    "api_terms_separate": true,
+    "status": "SOURCE VERIFIED"
+  }
+}

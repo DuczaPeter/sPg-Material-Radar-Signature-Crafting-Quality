@@ -1,0 +1,12 @@
+{
+  "run_date": "2026-09-22",
+  "command": "node tools/check-release.mjs",
+  "status": "PASS",
+  "passed": 61,
+  "failed": 0,
+  "scope": "Static repository/release integrity gate; does not claim LIVE network runtime validation.",
+  "canonical_sha256": "28be33eae5f2b53f375e52003a7af282ff8b97243fdb14ee0b28b531be9402f4",
+  "notes": [
+    "The final package is re-manifested after this summary is added and the gate is run again."
+  ]
+}
