@@ -1,0 +1,128 @@
+PASS required:README.md
+PASS required:README.en.md
+PASS required:LICENSE
+PASS required:NOTICE.md
+PASS required:THIRD_PARTY_NOTICES.md
+PASS required:CHANGELOG.md
+PASS required:CONTRIBUTING.md
+PASS required:SECURITY.md
+PASS required:PRIVACY.md
+PASS required:AGENTS.md
+PASS required:STATUS.md
+PASS required:VERSION.json
+PASS required:index.html
+PASS required:sPg_Material_Radar_Signature_Crafting_Quality.html
+PASS required:release/sPg_Material_Radar_Signature_Crafting_Quality.html
+PASS required:docs/RELEASE_STANDARD.md
+PASS required:docs/RELEASE_CONTRACT.md
+PASS required:docs/RELEASE_CHECKLIST.md
+PASS required:docs/FINAL_REPORT.md
+PASS required:docs/ARCHITECTURE.md
+PASS required:docs/TESTING.md
+PASS required:docs/RELEASE.md
+PASS required:docs/VISUALS.md
+PASS required:assets/ui-desktop.png
+PASS required:assets/ui-mobile.png
+PASS required:assets/data-flow.svg
+PASS required:assets/social-preview.svg
+PASS required:assets/social-preview.png
+PASS required:test-artifacts/source-verification-summary.json
+PASS required:test-artifacts/runtime-fallback-summary.json
+PASS required:test-artifacts/visual-validation-summary.json
+PASS required:tools/build-manifest.mjs
+PASS required:tools/check-release.mjs
+PASS required:tools/runtime-smoke.py
+PASS required:FILE-INVENTORY.json
+PASS required:PACKAGE-MANIFEST.json
+PASS required:CHECKSUMS.sha256
+PASS required:.github/workflows/release-gate.yml
+PASS required:.github/ISSUE_TEMPLATE/bug_report.md
+PASS required:.github/ISSUE_TEMPLATE/feature_request.md
+PASS required:.github/pull_request_template.md
+PASS VERSION parse
+PASS MANIFEST parse
+PASS INVENTORY parse
+PASS RUNTIME parse
+PASS SOURCE parse
+PASS canonical/standalone byte parity
+PASS canonical/release byte parity
+PASS canonical SHA-256 matches VERSION — 28be33eae5f2b53f375e52003a7af282ff8b97243fdb14ee0b28b531be9402f4
+PASS release standard version consistency — V4.1
+PASS release package id consistency — 2026.09.23-r2-v4.1-standard
+PASS source commit consistency — a364bfba7127f9e9e68d84d38ef0eba81a8b1063
+PASS release standard V4.1 marker
+PASS release contract predates gate definition structurally
+PASS embedded script present — 1 script block(s)
+PASS script 1 parse
+PASS duplicate DOM ids
+PASS required DOM id:placeAll
+PASS required DOM id:placeSurface
+PASS required DOM id:placeSpace
+PASS required DOM id:targetMiningToggle
+PASS required DOM id:scmdbLiveStatus
+PASS removed craftOnly control absent
+PASS app marker:https://raw.githubusercontent.com/KrovaxCode/S
+PASS app marker:qualityScale
+PASS app marker:ACTIVE_QUALITY_LOCATION_REGISTRY
+PASS app marker:SCMDB_LOCATION_LABEL_OVERRIDES
+PASS app marker:Nem hivatalos Star Citizen rajongói segédoldal
+PASS HU topic:Minden hely / Felszín / Űr
+PASS HU topic:Target Mining
+PASS HU topic:KrovaxCode / SCMDB_DATA
+PASS HU topic:READY WITH LIMITATIONS
+PASS HU topic:4 órás
+PASS HU topic:All Rights Reserved
+PASS EN topic:All locations / Surface / Space
+PASS EN topic:Target Mining
+PASS EN topic:KrovaxCode / SCMDB_DATA
+PASS EN topic:READY WITH LIMITATIONS
+PASS EN topic:four-hour
+PASS EN topic:All Rights Reserved
+PASS credential / secret cleanliness
+PASS visual non-empty:assets/ui-desktop.png
+PASS visual non-empty:assets/ui-mobile.png
+PASS visual non-empty:assets/data-flow.svg
+PASS visual non-empty:assets/social-preview.svg
+PASS visual non-empty:assets/social-preview.png
+PASS desktop screenshot evidence referenced
+PASS mobile screenshot evidence referenced
+PASS runtime evidence level — RUNTIME VERIFIED
+PASS runtime fallback PASS — PASS
+PASS runtime desktop+mobile cases — 2
+PASS runtime viewport 1440x1000
+PASS runtime viewport 390x844
+PASS source verification PASS — PASS
+PASS SCMDB live snapshot recorded — 4.10.1-live.12660092
+PASS manifest exists:index.html
+PASS manifest hash:index.html
+PASS manifest exists:sPg_Material_Radar_Signature_Crafting_Quality.html
+PASS manifest hash:sPg_Material_Radar_Signature_Crafting_Quality.html
+PASS manifest exists:release/sPg_Material_Radar_Signature_Crafting_Quality.html
+PASS manifest hash:release/sPg_Material_Radar_Signature_Crafting_Quality.html
+PASS manifest exists:docs/RELEASE_STANDARD.md
+PASS manifest hash:docs/RELEASE_STANDARD.md
+PASS manifest exists:docs/RELEASE_CONTRACT.md
+PASS manifest hash:docs/RELEASE_CONTRACT.md
+PASS manifest exists:VERSION.json
+PASS manifest hash:VERSION.json
+PASS manifest exists:STATUS.md
+PASS manifest hash:STATUS.md
+PASS manifest exists:test-artifacts/source-verification-summary.json
+PASS manifest hash:test-artifacts/source-verification-summary.json
+PASS manifest exists:test-artifacts/runtime-fallback-summary.json
+PASS manifest hash:test-artifacts/runtime-fallback-summary.json
+PASS manifest exists:assets/ui-desktop.png
+PASS manifest hash:assets/ui-desktop.png
+PASS manifest exists:assets/ui-mobile.png
+PASS manifest hash:assets/ui-mobile.png
+PASS manifest exists:assets/data-flow.svg
+PASS manifest hash:assets/data-flow.svg
+PASS manifest exists:assets/social-preview.png
+PASS manifest hash:assets/social-preview.png
+PASS file inventory hashes
+PASS CHECKSUMS.sha256 hashes
+PASS own LICENSE present/resolved
+PASS third-party unknown licences disclosed
+PASS unofficial fan-site notice
+
+STATIC RELEASE GATE: PASS — 126 passed, 0 failed

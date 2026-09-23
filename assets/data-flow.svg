@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">sPg Material Radar data flow</title>
+  <desc id="desc">Technical diagram showing embedded fallback, Krovax SCMDB live data, validation and UI registries.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#081019"/><stop offset="1" stop-color="#0d1723"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#43d9ff"/>
+    </marker>
+    <style>
+      .title{font:700 30px Arial,sans-serif;fill:#eef7ff}.sub{font:400 16px Arial,sans-serif;fill:#8fa4b8}
+      .box{fill:#0d1824;stroke:#28506c;stroke-width:2;rx:16}.box2{fill:#17130a;stroke:#c08b15;stroke-width:2;rx:16}
+      .h{font:700 18px Arial,sans-serif;fill:#eef7ff}.t{font:400 14px Arial,sans-serif;fill:#b9c7d6}.a{stroke:#43d9ff;stroke-width:3;fill:none;marker-end:url(#arrow)}
+      .warn{font:700 13px Arial,sans-serif;fill:#ffd26a}
+    </style>
+  </defs>
+  <rect width="1200" height="620" rx="26" fill="url(#bg)"/>
+  <text x="54" y="58" class="title">sPg Material Radar — adatfolyam / data flow</text>
+  <text x="54" y="86" class="sub">Single-file HTML · LIVE source + validated fallback architecture</text>
+
+  <rect x="55" y="140" width="260" height="130" class="box2"/>
+  <text x="80" y="178" class="h">Embedded fallback</text>
+  <text x="80" y="208" class="t">Radar · locations · crafting</text>
+  <text x="80" y="232" class="t">Refinery registry · aliases</text>
+  <text x="80" y="255" class="warn">Immediate first render</text>
+
+  <rect x="55" y="340" width="260" height="150" class="box"/>
+  <text x="80" y="378" class="h">Krovax / SCMDB_DATA</text>
+  <text x="80" y="408" class="t">latest.json → current LIVE</text>
+  <text x="80" y="432" class="t">mining_data JSON</text>
+  <text x="80" y="456" class="t">radar · rarity · compositions</text>
+  <text x="80" y="480" class="t">locations · quality metadata</text>
+
+  <rect x="465" y="240" width="285" height="160" class="box"/>
+  <text x="492" y="278" class="h">Validation + adapter</text>
+  <text x="492" y="308" class="t">schema/version checks</text>
+  <text x="492" y="332" class="t">name aliases + normalization</text>
+  <text x="492" y="356" class="t">primary qualityScale = 1.0</text>
+  <text x="492" y="380" class="t">fallback preserved on failure</text>
+
+  <rect x="895" y="145" width="250" height="150" class="box"/>
+  <text x="920" y="183" class="h">Runtime registries</text>
+  <text x="920" y="213" class="t">materials · radar values</text>
+  <text x="920" y="237" class="t">Best Quality locations</text>
+  <text x="920" y="261" class="t">Target Mining inputs</text>
+
+  <rect x="895" y="360" width="250" height="145" class="box"/>
+  <text x="920" y="398" class="h">Browser UI</text>
+  <text x="920" y="428" class="t">Radar · Surface / Space</text>
+  <text x="920" y="452" class="t">Crafting · refinery</text>
+  <text x="920" y="476" class="t">HU / EN · Target Mining</text>
+
+  <path d="M315 205 C390 205 390 270 465 290" class="a"/>
+  <path d="M315 415 C390 415 390 360 465 350" class="a"/>
+  <path d="M750 305 C820 305 825 225 895 225" class="a"/>
+  <path d="M1020 295 L1020 360" class="a"/>
+  <text x="795" y="588" class="sub">Technical diagram · generated project graphic · not runtime evidence</text>
+</svg>

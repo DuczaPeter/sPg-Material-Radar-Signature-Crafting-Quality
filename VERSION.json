@@ -1,0 +1,25 @@
+{
+  "project": "sPg Material Radar Signature & Crafting Quality",
+  "application_version": null,
+  "application_version_note": "Production UI intentionally has no semantic version string.",
+  "release_package_id": "2026.09.23-r2-v4.1-standard",
+  "release_date": "2026-09-23",
+  "release_standard_version": "V4.1",
+  "release_standard_path": "docs/RELEASE_STANDARD.md",
+  "canonical_entrypoint": "index.html",
+  "standalone_copy": "sPg_Material_Radar_Signature_Crafting_Quality.html",
+  "release_artifact": "release/sPg_Material_Radar_Signature_Crafting_Quality.html",
+  "source_repository": "DuczaPeter/sPg-Material-Radar-Signature-Crafting-Quality",
+  "source_branch": "main",
+  "source_commit": "a364bfba7127f9e9e68d84d38ef0eba81a8b1063",
+  "source_git_blob_sha1": "6be14d6c299b8e9efc1dd48d183b2b0eebd9cb30",
+  "canonical_sha256": "28be33eae5f2b53f375e52003a7af282ff8b97243fdb14ee0b28b531be9402f4",
+  "release_status": "READY WITH LIMITATIONS",
+  "validation": {
+    "source": "VERIFIED",
+    "static": "VERIFIED",
+    "runtime_fallback_harness": "VERIFIED",
+    "runtime_live_external_fetch": "NOT VERIFIED",
+    "public_deployment_visual_parity": "NOT VERIFIED"
+  }
+}

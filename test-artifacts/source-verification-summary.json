@@ -1,0 +1,50 @@
+{
+  "run_date": "2026-09-23",
+  "status": "PASS",
+  "evidence_level": "SOURCE VERIFIED",
+  "scope": "Release-source/provenance check. This is not a browser end-to-end integration test.",
+  "project_repository": {
+    "repository": "DuczaPeter/sPg-Material-Radar-Signature-Crafting-Quality",
+    "branch": "main",
+    "commit": "a364bfba7127f9e9e68d84d38ef0eba81a8b1063",
+    "app_blob": "6be14d6c299b8e9efc1dd48d183b2b0eebd9cb30",
+    "app_sha256": "28be33eae5f2b53f375e52003a7af282ff8b97243fdb14ee0b28b531be9402f4",
+    "verified": true
+  },
+  "krovax_latest": {
+    "repository": "KrovaxCode/SCMDB_DATA",
+    "repository_license_metadata": null,
+    "manifest_path": "data/latest.json",
+    "version": "4.10.1-live.12660092",
+    "generated_at": "2026-09-16T19:58:26Z",
+    "manifest_sha": "19438ab2d89ff166e2621845ffc1358d2cf186f7",
+    "verified": true
+  },
+  "star_citizen_wiki_api": {
+    "repository": "StarCitizenWiki/API",
+    "license_metadata": "MIT",
+    "default_branch": "develop",
+    "verified": true
+  },
+  "scunpacked_data": {
+    "repository": "StarCitizenWiki/scunpacked-data",
+    "repository_license_metadata": null,
+    "verified": true,
+    "note": "No repository licence declared in current GitHub metadata; full dataset is not redistributed in this release."
+  },
+  "rsi_fan_guidance": {
+    "url": "https://support.robertsspaceindustries.com/hc/en-us/articles/360006895793-Star-Citizen-Fankit-and-Fandom-FAQ",
+    "observed_updated": "2026-09-02",
+    "verified": true,
+    "note": "Current guidance states fan sites should identify themselves as unofficial and link to the official site."
+  },
+  "uex_terms": {
+    "url": "https://uexcorp.space/about/terms",
+    "verified": true,
+    "note": "Current terms include separate API terms and describe the API as work in progress."
+  },
+  "limitations": [
+    "No end-to-end packaged-browser LIVE third-party fetch was executed in this source-verification step.",
+    "Source/licence metadata may change after this dated verification."
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "run_date": "2026-09-23T05:09:35.951125+00:00",
+  "harness": "Chromium via Playwright; packaged HTML injected into about:blank; localStorage mocked because opaque origin denies native localStorage; all external HTTP(S) requests intentionally aborted.",
+  "network_condition": "OFFLINE/FALLBACK — external requests deliberately blocked",
+  "scope": "Runtime interaction/responsive smoke and real UI screenshot capture. Does not verify LIVE third-party fetches.",
+  "evidence_level": "RUNTIME VERIFIED",
+  "status": "PASS",
+  "tests": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "initial_rows": 35,
+      "old_craft_only_present": false,
+      "place_button_count": 3,
+      "page_error_count": 0,
+      "page_errors": [],
+      "blocked_network_request_count": 97,
+      "surface_rows": 31,
+      "surface_active": true,
+      "space_rows": 23,
+      "space_active": true,
+      "restored_rows": 35,
+      "target_panel_open": true,
+      "horizontal_overflow_px": 0,
+      "html_lang_after_english": "en",
+      "english_place_labels": [
+        "All locations",
+        "Surface",
+        "Space"
+      ],
+      "fallback_status_text": "Embedded fallback data active",
+      "screenshot": "test-artifacts/screenshots/ui-desktop.png",
+      "pass": true
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "initial_rows": 35,
+      "old_craft_only_present": false,
+      "place_button_count": 3,
+      "page_error_count": 0,
+      "page_errors": [],
+      "blocked_network_request_count": 97,
+      "surface_rows": 31,
+      "surface_active": true,
+      "space_rows": 23,
+      "space_active": true,
+      "restored_rows": 35,
+      "target_panel_open": true,
+      "horizontal_overflow_px": 0,
+      "html_lang_after_english": "en",
+      "english_place_labels": [
+        "All locations",
+        "Surface",
+        "Space"
+      ],
+      "fallback_status_text": "Embedded fallback data active",
+      "screenshot": "test-artifacts/screenshots/ui-mobile.png",
+      "pass": true
+    }
+  ],
+  "notes": [
+    "Blocked network requests are intentional and are not counted as application JavaScript failures.",
+    "The screenshots are real renders of the packaged artifact under this documented fallback condition."
+  ]
+}
