@@ -1,0 +1,30 @@
+{
+  "project": "sPg Material Radar Signature & Crafting Quality",
+  "application_version": null,
+  "application_version_note": "Production UI intentionally has no semantic version string.",
+  "release_package_id": "2026.09.23-r3-v4.2-standard",
+  "previous_release_package_id": "2026.09.23-r2-v4.1-standard",
+  "release_date": "2026-09-23",
+  "release_standard_version": "V4.2",
+  "release_standard_sha256": "f3b1358844a9f04da5ea8bfd6fe87b3051bd052e753bd8451991b39f894972b2",
+  "release_standard_path": "docs/RELEASE_STANDARD.md",
+  "canonical_entrypoint": "index.html",
+  "standalone_copy": "sPg_Material_Radar_Signature_Crafting_Quality.html",
+  "release_artifact": "release/sPg_Material_Radar_Signature_Crafting_Quality.html",
+  "source_repository": "DuczaPeter/sPg-Material-Radar-Signature-Crafting-Quality",
+  "source_branch": "main",
+  "source_commit": "a364bfba7127f9e9e68d84d38ef0eba81a8b1063",
+  "source_git_blob_sha1": "6be14d6c299b8e9efc1dd48d183b2b0eebd9cb30",
+  "canonical_sha256": "28be33eae5f2b53f375e52003a7af282ff8b97243fdb14ee0b28b531be9402f4",
+  "repository_publication": "MANUAL BY USER",
+  "package_status": "READY WITH LIMITATIONS",
+  "published_release_status": "BLOCKED - post-publish fresh-clone verification pending",
+  "validation": {
+    "source": "VERIFIED",
+    "static": "VERIFIED",
+    "runtime_fallback_harness": "VERIFIED",
+    "runtime_live_external_fetch": "NOT VERIFIED",
+    "public_deployment_visual_parity": "NOT VERIFIED",
+    "published_repository_parity": "NOT VERIFIED"
+  }
+}
